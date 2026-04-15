@@ -158,7 +158,7 @@ aida-venture-os/
 
 ## Progreso del desarrollo
 
-### Fase 0 — Fundaciones ← ESTAMOS AQUÍ
+### Fase 0 — Fundaciones ← COMPLETA ✅
 - [x] Entorno Python configurado (venv, dependencias)
 - [x] PostgreSQL local con DB `aida_venture_os`
 - [x] Repositorio GitHub configurado
@@ -169,8 +169,8 @@ aida-venture-os/
 - [x] `app/models/startup.py` — en progreso
 - [x] Modelos restantes (6 archivos)
 - [x] `alembic.ini` + configuración de migraciones
-- [ ] Primera migración y creación de tablas en DB
-- [ ] Carga de seed data
+- [x] Primera migración y creación de tablas en DB
+- [x] Carga de seed data
 
 ### Fase 1 — Motor de comparabilidad
 - [ ] APIs Market Reality + Startup Engine
