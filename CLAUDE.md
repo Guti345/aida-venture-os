@@ -167,8 +167,8 @@ aida-venture-os/
 - [x] `app/main.py` — FastAPI con / y /health operativos
 - [x] `app/models/shared.py` — 4 tablas transversales
 - [x] `app/models/startup.py` — en progreso
-- [ ] Modelos restantes (6 archivos)
-- [ ] `alembic.ini` + configuración de migraciones
+- [x] Modelos restantes (6 archivos)
+- [x] `alembic.ini` + configuración de migraciones
 - [ ] Primera migración y creación de tablas en DB
 - [ ] Carga de seed data
 
