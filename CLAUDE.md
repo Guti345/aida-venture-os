@@ -166,7 +166,7 @@ aida-venture-os/
 - [x] `app/database.py` — conexión SQLAlchemy
 - [x] `app/main.py` — FastAPI con / y /health operativos
 - [x] `app/models/shared.py` — 4 tablas transversales
-- [ ] `app/models/startup.py` — en progreso
+- [x] `app/models/startup.py` — en progreso
 - [ ] Modelos restantes (6 archivos)
 - [ ] `alembic.ini` + configuración de migraciones
 - [ ] Primera migración y creación de tablas en DB
