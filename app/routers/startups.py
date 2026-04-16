@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.startup import MetricSnapshot, Startup, StartupStage, StartupStatus
+from app.schemas.market import PercentileResult
 from app.schemas.startup import MetricSnapshotRead, StartupList, StartupRead, StartupWithMetrics
+from app.services.percentile import calculate_percentile
 
 router = APIRouter(prefix="/startups", tags=["startups"])
 
@@ -61,6 +63,18 @@ def list_metrics(
         q = q.filter(MetricSnapshot.metric_name == metric_name)
 
     return q.order_by(desc(MetricSnapshot.period_date)).all()
+
+
+@router.get("/{startup_id}/percentile", response_model=PercentileResult)
+def get_percentile(
+    startup_id: uuid.UUID,
+    metric_name: str = Query(...),
+    segment_id: uuid.UUID = Query(...),
+    db: Session = Depends(get_db),
+):
+    if db.get(Startup, startup_id) is None:
+        raise HTTPException(status_code=404, detail="Startup no encontrada")
+    return calculate_percentile(db, startup_id, metric_name, segment_id)
 
 
 @router.get("/{startup_id}/metrics/latest", response_model=dict[str, MetricSnapshotRead])
