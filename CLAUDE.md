@@ -173,9 +173,9 @@ aida-venture-os/
 - [x] Carga de seed data
 
 ### Fase 1 — Motor de comparabilidad
-- [ ] APIs Market Reality + Startup Engine
-- [ ] Servicio de cálculo de percentiles
-- [ ] Importador de Excels
+- [x] APIs Market Reality + Startup Engine
+- [x] Servicio de cálculo de percentiles
+- [x] Importador de Excels
 
 ### Fase 2 — Simulador y Studio
 - [ ] Valuation Intelligence

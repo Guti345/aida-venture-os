@@ -246,13 +246,13 @@ Disponible en:
 - [x] `CLAUDE.md` — memoria persistente para Claude Code
 
 ### Fase 1 — Motor de comparabilidad ← ESTAMOS AQUÍ
-- [ ] Schemas Pydantic — `app/schemas/startup.py` y `app/schemas/market.py`
-- [ ] Router startups — `app/routers/startups.py` con CRUD y métricas
-- [ ] Router market — `app/routers/market.py` con benchmarks y segmentos
-- [ ] Servicio `app/services/percentile.py` — startup X en percentil Y vs benchmark
-- [ ] Importador de Excels — cargar benchmarks desde los 5 archivos .xlsx
-- [ ] Benchmarks seed cargados en `market_segments` y `benchmark_entries`
-- [ ] Registrar routers en `app/main.py`
+- [x] Schemas Pydantic — `app/schemas/startup.py` y `app/schemas/market.py`
+- [x] Router startups — `app/routers/startups.py` con CRUD y métricas
+- [x] Router market — `app/routers/market.py` con benchmarks y segmentos
+- [x] Servicio `app/services/percentile.py` — startup X en percentil Y vs benchmark
+- [x] Importador de Excels — cargar benchmarks desde los 5 archivos .xlsx
+- [x] Benchmarks seed cargados en `market_segments` y `benchmark_entries`
+- [x] Registrar routers en `app/main.py`
 
 ### Fase 2 — Simulador y studio (semanas 6–8)
 - [ ] Valuation Intelligence — schemas + router + lógica
