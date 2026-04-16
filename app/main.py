@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
+from app.routers import startups
 
 app = FastAPI(
     title="AIDA Venture OS",
@@ -24,6 +25,9 @@ def root():
         "modo": "demo — datos 100% simulados",
         "docs": "/docs",
     }
+
+
+app.include_router(startups.router)
 
 
 @app.get("/health")
