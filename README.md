@@ -20,9 +20,9 @@ Responde tres preguntas fundamentales en todo momento:
 
 ## Estado actual del proyecto
 
-> **Fase 0 completada — Fase 1 en curso**
-> Backend operativo con 43 tablas en PostgreSQL y 255 registros simulados cargados.
-> Actualmente construyendo el motor de comparabilidad y las primeras APIs.
+> **Fase 1 completada — Fase 2 en curso**
+> Backend operativo con 43 tablas en PostgreSQL y 503 registros simulados cargados.
+> Motor de comparabilidad operativo con percentiles reales. Construyendo Valuation Intel y Fund Simulator.
 
 ### Decisiones de arquitectura confirmadas
 
@@ -68,18 +68,29 @@ El sistema opera con **255 registros simulados** en base de datos:
 
 | Tabla | Registros |
 |---|---|
-| funds | 1 |
+| currencies | 5 |
+| tags | 14 |
 | startups | 10 |
 | founders | 20 |
 | startup_founders | 20 |
 | funding_rounds | 9 |
-| investments | 9 |
 | metric_snapshots | 138 |
+| market_segments | 54 |
+| benchmark_entries | 119 |
+| valuation_events | 9 |
+| funds | 1 |
+| investments | 9 |
 | studio_companies | 7 |
-| studio_milestones | 19 |
 | build_costs | 16 |
+| studio_milestones | 19 |
 | alpha_metrics | 6 |
-| **Total** | **255** |
+| fintech_subverticals | 6 |
+| sourcing_channels | 6 |
+| deal_opportunities | 8 |
+| thesis_alignments | 10 |
+| dd_checklists | 14 |
+| ic_memos | 3 |
+| **Total** | **503** |
 
 ### Plan de transición datos simulados → datos reales
 
@@ -139,10 +150,14 @@ aida-venture-os/
 │   │   ├── dealflow.py          ✅ deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos
 │   │   └── reporting.py         ✅ lp_profiles, reports, narrative_blocks, ic_decisions
 │   │
-│   ├── schemas/                 🔄 En construcción — Pydantic v2 schemas
-│   ├── routers/                 🔄 En construcción — endpoints REST por dominio
+│   ├── schemas/                 ✅ Pydantic v2 schemas — startup.py + market.py
+│   │   ├── startup.py           ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
+│   │   └── market.py            ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
+│   ├── routers/                 ✅ Endpoints REST operativos — 2 routers activos
+│   │   ├── startups.py          ✅ 5 endpoints — lista, detalle, métricas, percentil, métricas latest
+│   │   └── market.py            ✅ 2 endpoints — segmentos y benchmarks con filtros
 │   └── services/                🔄 En construcción — lógica de negocio
-│       ├── percentile.py        🔄 Cálculo de percentiles vs benchmarks
+│       ├── percentile.py        ✅ Cálculo de percentiles vs benchmarks con interpolación lineal
 │       ├── simulator.py         ⬜ Monte Carlo MOIC/IRR
 │       ├── alpha.py             ⬜ Studio alpha vs mercado
 │       └── importer.py          ⬜ Importación de Excels a DB
@@ -157,6 +172,8 @@ aida-venture-os/
 │   ├── seed_data.py             ✅ 5 startups portafolio + fondo (147 registros)
 │   ├── studio_seed_data.py      ✅ 5 empresas venture studio (95 registros)
 │   ├── load_seed.py             ✅ Cargador unificado idempotente — 255 registros insertados
+│   ├── load_benchmarks.py       ✅ Benchmarks desde Excels — 54 segmentos + 119 benchmarks
+│   ├── load_seed_extended.py    ✅ Seed extendida Fase 2 — 75 registros adicionales
 │   ├── VCFunds_Metrics.xlsx     ✅
 │   ├── Venture_Studio_Metrics_Reference.xlsx ✅
 │   ├── _AIDA_Ventures_-_Startups_Benchmarks.xlsx ✅
@@ -245,7 +262,7 @@ Disponible en:
 - [x] `data/load_seed.py` — 255 registros simulados cargados
 - [x] `CLAUDE.md` — memoria persistente para Claude Code
 
-### Fase 1 — Motor de comparabilidad ← ESTAMOS AQUÍ
+### Fase 1 — Motor de comparabilidad ✅ COMPLETA
 - [x] Schemas Pydantic — `app/schemas/startup.py` y `app/schemas/market.py`
 - [x] Router startups — `app/routers/startups.py` con CRUD y métricas
 - [x] Router market — `app/routers/market.py` con benchmarks y segmentos
@@ -253,12 +270,15 @@ Disponible en:
 - [x] Importador de Excels — cargar benchmarks desde los 5 archivos .xlsx
 - [x] Benchmarks seed cargados en `market_segments` y `benchmark_entries`
 - [x] Registrar routers en `app/main.py`
+- [x] Seed extendida — `data/load_seed_extended.py` — currencies, tags, fintech_subverticals, sourcing_channels, deals, ic_memos, valuation_events
 
-### Fase 2 — Simulador y studio (semanas 6–8)
-- [ ] Valuation Intelligence — schemas + router + lógica
+### Fase 2 — Simulador y studio ← ESTAMOS AQUÍ
+- [ ] Valuation Intelligence — schemas + router + cálculo de múltiplos vs mercado
 - [ ] Fund Simulator — Monte Carlo MOIC/IRR con fondo parametrizable
-- [ ] Studio Performance — alpha vs mercado
-- [ ] Fintech Deep Dive — subverticales y unit economics
+- [ ] Studio Performance — alpha vs mercado (router + endpoints)
+- [ ] Fintech Deep Dive — unit economics y comparables por subvertical
+- [ ] Deal Flow — router + endpoints para pipeline de deals
+- [ ] LPs y reporting básico
 
 ### Fase 3 — Demo completo (semanas 9–10)
 - [ ] Deal Flow & Sourcing — pipeline completo
@@ -271,6 +291,31 @@ Disponible en:
 - [ ] Reemplazar seed data por datos reales del fondo
 - [ ] Proceso de reporte periódico con startups reales
 - [ ] Onboarding de primeros LPs como viewers
+
+---
+
+## Endpoints disponibles en la API
+
+### Sistema
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/` | Health check básico |
+| GET | `/health` | Estado del servidor |
+
+### Startups (`/startups`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/startups` | Lista todas las startups — filtros: sector, stage, country, studio_built |
+| GET | `/startups/{id}` | Detalle de una startup |
+| GET | `/startups/{id}/metrics` | Métricas históricas — filtro: metric_name |
+| GET | `/startups/{id}/metrics/latest` | Último snapshot por cada métrica |
+| GET | `/startups/{id}/percentile` | Posición percentil vs benchmark — params: metric_name, segment_id |
+
+### Market (`/market`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/market/segments` | Segmentos de mercado — filtros: sector, stage, geography, country |
+| GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 — filtros: segment_id, multiple_type, sector |
 
 ---
 
@@ -305,5 +350,5 @@ Disponible en:
 ---
 
 *Última actualización: Abril 2026 — AIDA Ventures*
-*Estado: Fase 0 completa — Fase 1 en curso*
-*Base de datos: 43 tablas creadas — 255 registros simulados cargados*
+*Estado: Fase 1 completa — Fase 2 en curso*
+*Base de datos: 43 tablas creadas — 503 registros simulados cargados*

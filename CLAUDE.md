@@ -10,8 +10,8 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 **Nombre:** AIDA Venture OS  
 **Descripción:** Sistema operativo de decisión para venture capital y venture studio.  
 **Empresa:** AIDA Ventures + Scale Radical  
-**Estado actual:** Demo funcional con datos 100% simulados  
-**Objetivo inmediato:** Backend funcional con APIs, modelos de DB y seed data cargado  
+**Estado actual:** Fase 1 completa — Motor de comparabilidad operativo con 503 registros en DB  
+**Objetivo inmediato:** Fase 2 — Valuation Intel, Fund Simulator Monte Carlo, Studio router  
 
 ---
 
@@ -35,31 +35,43 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ CREADO — FastAPI entry point
-│   ├── database.py          ✅ CREADO — conexión PostgreSQL con SQLAlchemy
+│   ├── main.py              ✅ FastAPI entry point — routers startups + market registrados
+│   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
-│   │   ├── __init__.py      ✅ CREADO
-│   │   ├── shared.py        ✅ CREADO — users, currencies, tags, audit_logs
-│   │   ├── startup.py       🔄 EN PROGRESO — startups, founders, metric_snapshots
-│   │   ├── valuation.py     ⬜ PENDIENTE
-│   │   ├── fund.py          ⬜ PENDIENTE
-│   │   ├── studio.py        ⬜ PENDIENTE
-│   │   ├── fintech.py       ⬜ PENDIENTE
-│   │   ├── dealflow.py      ⬜ PENDIENTE
-│   │   └── reporting.py     ⬜ PENDIENTE
-│   ├── schemas/             ⬜ PENDIENTE — Pydantic v2 schemas
-│   ├── routers/             ⬜ PENDIENTE — endpoints REST
-│   └── services/            ⬜ PENDIENTE — lógica de negocio
-├── alembic/                 ✅ CREADO — carpeta con .gitkeep
+│   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
+│   │   ├── shared.py        ✅ users, currencies, tags, audit_logs
+│   │   ├── startup.py       ✅ startups, founders, startup_founders, funding_rounds, metric_snapshots
+│   │   ├── market.py        ✅ market_segments, benchmark_entries, benchmark_series, valuation_distributions
+│   │   ├── valuation.py     ✅ valuation_events, multiple_analyses, valuation_drivers, outlier_flags
+│   │   ├── fund.py          ✅ funds, lps, investments, fund_scenarios, fund_metrics
+│   │   ├── studio.py        ✅ studio_companies, build_costs, studio_milestones, alpha_metrics
+│   │   ├── fintech.py       ✅ fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables
+│   │   ├── dealflow.py      ✅ deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos
+│   │   └── reporting.py     ✅ lp_profiles, reports, narrative_blocks, ic_decisions
+│   ├── schemas/
+│   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
+│   │   └── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
+│   ├── routers/
+│   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
+│   │   └── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
+│   └── services/
+│       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
+│       ├── simulator.py     ⬜ PENDIENTE — Monte Carlo MOIC/IRR
+│       ├── alpha.py         ⬜ PENDIENTE — Studio alpha vs mercado
+│       └── importer.py      ⬜ PENDIENTE — Importación de Excels a DB
+├── alembic/                 ✅ Migraciones configuradas — 43 tablas en producción
 ├── data/
-│   ├── seed_data.py         ✅ CREADO — 5 startups portafolio simuladas
-│   ├── studio_seed_data.py  ✅ CREADO — 5 empresas studio simuladas
-│   └── *.xlsx               ✅ CARGADOS — benchmarks externos
-├── tests/                   ✅ CREADO — carpeta con __init__.py
-├── .env                     ✅ CREADO — credenciales locales (no en GitHub)
-├── .env.example             ✅ CREADO — template público
-├── requirements.txt         ✅ CREADO
-├── README.md                ✅ CREADO
+│   ├── seed_data.py         ✅ 5 startups portafolio + fondo (147 registros)
+│   ├── studio_seed_data.py  ✅ 5 empresas venture studio (95 registros)
+│   ├── load_seed.py         ✅ Cargador unificado idempotente — 255 registros
+│   ├── load_benchmarks.py   ✅ Benchmarks desde Excels — 54 segmentos + 119 benchmarks
+│   ├── load_seed_extended.py ✅ Seed extendida Fase 2 — 75 registros adicionales
+│   └── *.xlsx               ✅ 5 archivos de benchmarks externos
+├── tests/                   ⬜ PENDIENTE — carpeta vacía
+├── .env                     ✅ Credenciales locales (no en GitHub)
+├── .env.example             ✅ Template público
+├── requirements.txt         ✅
+├── README.md                ✅
 └── CLAUDE.md                ✅ ESTE ARCHIVO
 ```
 
@@ -73,19 +85,20 @@ aida-venture-os/
 **Host:** `localhost`  
 **Connection string:** en `.env` como `DATABASE_URL`
 
-### 43 tablas en 8 dominios
+### 43 tablas en 8 dominios — estado al 2026-04-17
 
-| Dominio | Tablas | Estado |
-|---|---|---|
-| Transversales | users, currencies, tags, audit_logs | ✅ Modelos creados |
-| Startup Engine | startups, founders, startup_founders, funding_rounds, metric_snapshots, cohort_analyses | 🔄 En progreso |
-| Market Reality | market_segments, benchmark_entries, benchmark_series, valuation_distributions | ⬜ Pendiente |
-| Valuation Intel | valuation_events, multiple_analyses, valuation_drivers, outlier_flags | ⬜ Pendiente |
-| Fund Simulator | funds, lps, investments, portfolio_allocations, deal_assumptions, fund_scenarios, fund_metrics | ⬜ Pendiente |
-| Studio Performance | studio_companies, build_costs, studio_milestones, alpha_metrics | ⬜ Pendiente |
-| Fintech Deep Dive | fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables | ⬜ Pendiente |
-| Deal Flow | deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos | ⬜ Pendiente |
-| Reporting | lp_profiles, reports, narrative_blocks, ic_decisions | ⬜ Pendiente |
+| Dominio | Tablas | Modelo | Seed data | Registros |
+|---|---|---|---|---|
+| Transversales | users, currencies, tags, audit_logs | ✅ | 🔄 parcial | 19 (currencies 5, tags 14) |
+| Startup Engine | startups, founders, startup_founders, funding_rounds, metric_snapshots | ✅ | ✅ | 197 |
+| Market Reality | market_segments, benchmark_entries, benchmark_series, valuation_distributions | ✅ | ✅ | 173 |
+| Valuation Intel | valuation_events, multiple_analyses, valuation_drivers, outlier_flags | ✅ | 🔄 parcial | 9 (solo valuation_events) |
+| Fund Simulator | funds, lps, investments, fund_scenarios, fund_metrics | ✅ | 🔄 parcial | 10 (fund 1, investments 9) |
+| Studio Performance | studio_companies, build_costs, studio_milestones, alpha_metrics | ✅ | ✅ | 48 |
+| Fintech Deep Dive | fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables | ✅ | 🔄 parcial | 6 (solo subverticals) |
+| Deal Flow | deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos | ✅ | ✅ | 41 |
+| Reporting | lp_profiles, reports, narrative_blocks, ic_decisions | ✅ | ⬜ | 0 |
+| **TOTAL** | | | | **503** |
 
 ---
 
@@ -156,37 +169,59 @@ aida-venture-os/
 
 ---
 
+## Endpoints disponibles en la API
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/` | Bienvenida |
+| GET | `/health` | Estado del servidor |
+| GET | `/startups` | Lista con filtros: sector, stage, country, studio_built |
+| GET | `/startups/{id}` | Detalle de startup |
+| GET | `/startups/{id}/metrics` | Métricas históricas |
+| GET | `/startups/{id}/metrics/latest` | Último snapshot por métrica |
+| GET | `/startups/{id}/percentile` | Posición percentil vs benchmark |
+| GET | `/market/segments` | Segmentos de mercado con filtros |
+| GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 |
+
+---
+
 ## Progreso del desarrollo
 
-### Fase 0 — Fundaciones ← COMPLETA ✅
+### Fase 0 — Fundaciones ✅ COMPLETA
 - [x] Entorno Python configurado (venv, dependencias)
 - [x] PostgreSQL local con DB `aida_venture_os`
 - [x] Repositorio GitHub configurado
 - [x] Estructura de carpetas completa
 - [x] `app/database.py` — conexión SQLAlchemy
 - [x] `app/main.py` — FastAPI con / y /health operativos
-- [x] `app/models/shared.py` — 4 tablas transversales
-- [x] `app/models/startup.py` — en progreso
-- [x] Modelos restantes (6 archivos)
+- [x] 9 archivos de modelos SQLAlchemy — 43 tablas
 - [x] `alembic.ini` + configuración de migraciones
 - [x] Primera migración y creación de tablas en DB
-- [x] Carga de seed data
+- [x] `data/load_seed.py` — 255 registros simulados iniciales
 
-### Fase 1 — Motor de comparabilidad
-- [x] APIs Market Reality + Startup Engine
-- [x] Servicio de cálculo de percentiles
-- [x] Importador de Excels
+### Fase 1 — Motor de comparabilidad ✅ COMPLETA
+- [x] `app/schemas/startup.py` y `app/schemas/market.py` — Pydantic v2
+- [x] `app/routers/startups.py` — 5 endpoints operativos
+- [x] `app/routers/market.py` — 2 endpoints con filtros
+- [x] `app/services/percentile.py` — cálculo percentil con interpolación lineal
+- [x] `data/load_benchmarks.py` — 54 segmentos + 119 benchmarks desde Excels
+- [x] `data/load_seed_extended.py` — currencies, tags, fintech_subverticals, sourcing_channels, deals, ic_memos, valuation_events
+- [x] 503 registros totales en DB
 
-### Fase 2 — Simulador y Studio
-- [ ] Valuation Intelligence
-- [ ] Fund Simulator con Monte Carlo
-- [ ] Studio Performance + alpha metrics
+### Fase 2 — Simulador y Studio ← ESTAMOS AQUÍ
+- [ ] Valuation Intelligence — router + cálculo múltiplos vs mercado
+- [ ] Fund Simulator — Monte Carlo MOIC/IRR parametrizable
+- [ ] Studio Performance — router + endpoints alpha
+- [ ] Fintech Deep Dive — unit economics y comparables por subvertical
+- [ ] Deal Flow — router + endpoints para pipeline
+- [ ] Reporting básico — lp_profiles + reports
 
 ### Fase 3 — Demo completo
-- [ ] Deal Flow & Sourcing
+- [ ] Deal Flow & Sourcing completo
 - [ ] Reporting para LPs
-- [ ] Sistema de roles
-- [ ] Formulario de ingesta de métricas
+- [ ] Sistema de roles (gp / analyst / studio_operator / viewer)
+- [ ] Formulario de ingesta de métricas para startups
+- [ ] Tests por dominio
 
 ---
 
