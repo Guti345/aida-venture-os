@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation registrados
+│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation + fund registrados
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -51,15 +51,17 @@ aida-venture-os/
 │   ├── schemas/
 │   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
 │   │   ├── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
-│   │   └── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
+│   │   ├── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
+│   │   └── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, FundScenarioRead, ScenarioInput, ScenarioResult
 │   ├── routers/
 │   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
 │   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
-│   │   └── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
+│   │   ├── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
+│   │   └── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, simulate/quick
 │   └── services/
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
 │       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
-│       ├── simulator.py     ⬜ PENDIENTE — Monte Carlo MOIC/IRR
+│       ├── simulator.py     ✅ run_monte_carlo — N iteraciones vectorizadas con numpy, persiste FundScenario + FundMetrics
 │       ├── alpha.py         ⬜ PENDIENTE — Studio alpha vs mercado
 │       └── importer.py      ⬜ PENDIENTE — Importación de Excels a DB
 ├── alembic/                 ✅ Migraciones configuradas — 43 tablas en producción
@@ -190,6 +192,12 @@ aida-venture-os/
 | POST | `/valuation/analyze` | Ejecuta análisis completo — body: startup_id, segment_id |
 | GET | `/valuation/drivers/{startup_id}` | Drivers de valoración de una startup |
 | GET | `/valuation/outliers` | Outlier flags — filtro: flag_type |
+| GET | `/fund` | Datos del fondo activo |
+| GET | `/fund/investments` | Inversiones con nombre de startup |
+| GET | `/fund/metrics` | Métricas actuales (último FundMetric) |
+| GET | `/fund/scenarios` | Escenarios Monte Carlo guardados |
+| POST | `/fund/simulate` | Ejecuta Monte Carlo — body: ScenarioInput |
+| GET | `/fund/simulate/quick` | Monte Carlo con parámetros default |
 
 ---
 
@@ -218,7 +226,7 @@ aida-venture-os/
 
 ### Fase 2 — Simulador y Studio ← ESTAMOS AQUÍ
 - [x] Valuation Intelligence — schemas + service analyze_valuation + router 5 endpoints
-- [ ] Fund Simulator — Monte Carlo MOIC/IRR parametrizable
+- [x] Fund Simulator — Monte Carlo MOIC/IRR vectorizado con numpy, persiste FundScenario + FundMetrics, 6 endpoints
 - [ ] Studio Performance — router + endpoints alpha
 - [ ] Fintech Deep Dive — unit economics y comparables por subvertical
 - [ ] Deal Flow — router + endpoints para pipeline
