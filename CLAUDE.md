@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — routers startups + market registrados
+│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation registrados
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -50,12 +50,15 @@ aida-venture-os/
 │   │   └── reporting.py     ✅ lp_profiles, reports, narrative_blocks, ic_decisions
 │   ├── schemas/
 │   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
-│   │   └── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
+│   │   ├── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
+│   │   └── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
 │   ├── routers/
 │   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
-│   │   └── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
+│   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
+│   │   └── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
 │   └── services/
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
+│       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
 │       ├── simulator.py     ⬜ PENDIENTE — Monte Carlo MOIC/IRR
 │       ├── alpha.py         ⬜ PENDIENTE — Studio alpha vs mercado
 │       └── importer.py      ⬜ PENDIENTE — Importación de Excels a DB
@@ -182,6 +185,11 @@ aida-venture-os/
 | GET | `/startups/{id}/percentile` | Posición percentil vs benchmark |
 | GET | `/market/segments` | Segmentos de mercado con filtros |
 | GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 |
+| GET | `/valuation/events` | Lista valuation events — filtros: startup_id, segment_id |
+| GET | `/valuation/events/{event_id}` | Detalle de evento con multiple_analyses |
+| POST | `/valuation/analyze` | Ejecuta análisis completo — body: startup_id, segment_id |
+| GET | `/valuation/drivers/{startup_id}` | Drivers de valoración de una startup |
+| GET | `/valuation/outliers` | Outlier flags — filtro: flag_type |
 
 ---
 
@@ -209,7 +217,7 @@ aida-venture-os/
 - [x] 503 registros totales en DB
 
 ### Fase 2 — Simulador y Studio ← ESTAMOS AQUÍ
-- [ ] Valuation Intelligence — router + cálculo múltiplos vs mercado
+- [x] Valuation Intelligence — schemas + service analyze_valuation + router 5 endpoints
 - [ ] Fund Simulator — Monte Carlo MOIC/IRR parametrizable
 - [ ] Studio Performance — router + endpoints alpha
 - [ ] Fintech Deep Dive — unit economics y comparables por subvertical
