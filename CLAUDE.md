@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation + fund + studio + fintech registrados
+│   ├── main.py              ✅ FastAPI entry point — 7 routers registrados (startups, market, valuation, fund, studio, fintech, deals+sourcing)
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -54,14 +54,16 @@ aida-venture-os/
 │   │   ├── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
 │   │   ├── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, FundScenarioRead, ScenarioInput, ScenarioResult
 │   │   ├── studio.py        ✅ StudioCompanyRead, StudioCompanyWithStartup, BuildCostRead, StudioMilestoneRead, AlphaMetricRead, StudioSummary, TimelineEvent
-│   │   └── fintech.py       ✅ FintechSubverticalRead, FintechUnitEconomicsRead, RegulatoryRiskRead, FintechComparableRead, FintechSubverticalSummary, FintechMarketOverview
+│   │   ├── fintech.py       ✅ FintechSubverticalRead, FintechUnitEconomicsRead, RegulatoryRiskRead, FintechComparableRead, FintechSubverticalSummary, FintechMarketOverview
+│   │   └── dealflow.py      ✅ SourcingChannelRead, DealOpportunityRead, DealOpportunityWithStartup, ThesisAlignmentRead, DDChecklistRead, ICMemoRead, DealSummary, DealDetailRead
 │   ├── routers/
 │   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
 │   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
 │   │   ├── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
 │   │   ├── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, simulate/quick
 │   │   ├── studio.py        ✅ 8 endpoints — summary, companies, detail, timeline, costs, milestones, alpha, alpha/score
-│   │   └── fintech.py       ✅ 6 endpoints — subverticals, subvertical detail, overview, unit-economics, comparables, regulatory-risks
+│   │   ├── fintech.py       ✅ 6 endpoints — subverticals, subvertical detail, overview, unit-economics, comparables, regulatory-risks
+│   │   └── dealflow.py      ✅ 8 endpoints — /deals (lista, summary, detail, thesis, checklist, memos) + /sourcing (channels, channel/deals)
 │   └── services/
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
 │       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
@@ -216,6 +218,14 @@ aida-venture-os/
 | GET | `/fintech/unit-economics` | Unit economics — filtros: startup_id, subvertical_id, metric_name |
 | GET | `/fintech/comparables` | Comparables — filtros: subvertical_id, geography |
 | GET | `/fintech/regulatory-risks` | Riesgos regulatorios — filtros: startup_id, country, impact_level, status |
+| GET | `/deals` | Lista deals — filtros: status, sourcing_channel_id |
+| GET | `/deals/summary` | Estadísticas del pipeline (by_status, avg_thesis_score, deals_this_month) |
+| GET | `/deals/{deal_id}` | Deal completo con thesis, DD checklist e IC memos anidados |
+| GET | `/deals/{deal_id}/thesis` | Thesis alignments con score total y % |
+| GET | `/deals/{deal_id}/checklist` | DD checklist con progreso por categoría |
+| GET | `/deals/{deal_id}/memos` | IC memos ordenados por version desc |
+| GET | `/sourcing/channels` | Canales de sourcing activos |
+| GET | `/sourcing/channels/{channel_id}/deals` | Deals de un canal específico |
 
 ---
 
@@ -247,7 +257,7 @@ aida-venture-os/
 - [x] Fund Simulator — Monte Carlo MOIC/IRR vectorizado con numpy, persiste FundScenario + FundMetrics, 6 endpoints
 - [x] Studio Performance — summary, timeline, alpha score, 8 endpoints, 32 rutas totales
 - [x] Fintech Deep Dive — subverticals, overview, unit-economics, comparables, regulatory-risks, 6 endpoints, 38 rutas totales
-- [ ] Deal Flow — router + endpoints para pipeline
+- [x] Deal Flow & Sourcing — pipeline completo con thesis scoring, DD progress por categoría, IC memos, 8 endpoints, 46 rutas totales
 - [ ] Reporting básico — lp_profiles + reports
 
 ### Fase 3 — Demo completo

@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from app.database import get_db
 from app.routers import fintech, fund, market, startups, studio, valuation
+from app.routers.dealflow import router_deals, router_sourcing
 
 app = FastAPI(
     title="AIDA Venture OS",
@@ -33,6 +34,8 @@ app.include_router(valuation.router)
 app.include_router(fund.router)
 app.include_router(studio.router)
 app.include_router(fintech.router)
+app.include_router(router_deals)
+app.include_router(router_sourcing)
 
 
 @app.get("/health")
