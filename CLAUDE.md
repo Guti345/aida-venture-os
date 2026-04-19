@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation + fund + studio registrados
+│   ├── main.py              ✅ FastAPI entry point — routers startups + market + valuation + fund + studio + fintech registrados
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -53,13 +53,15 @@ aida-venture-os/
 │   │   ├── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
 │   │   ├── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
 │   │   ├── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, FundScenarioRead, ScenarioInput, ScenarioResult
-│   │   └── studio.py        ✅ StudioCompanyRead, StudioCompanyWithStartup, BuildCostRead, StudioMilestoneRead, AlphaMetricRead, StudioSummary, TimelineEvent
+│   │   ├── studio.py        ✅ StudioCompanyRead, StudioCompanyWithStartup, BuildCostRead, StudioMilestoneRead, AlphaMetricRead, StudioSummary, TimelineEvent
+│   │   └── fintech.py       ✅ FintechSubverticalRead, FintechUnitEconomicsRead, RegulatoryRiskRead, FintechComparableRead, FintechSubverticalSummary, FintechMarketOverview
 │   ├── routers/
 │   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
 │   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
 │   │   ├── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
 │   │   ├── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, simulate/quick
-│   │   └── studio.py        ✅ 8 endpoints — summary, companies, detail, timeline, costs, milestones, alpha, alpha/score
+│   │   ├── studio.py        ✅ 8 endpoints — summary, companies, detail, timeline, costs, milestones, alpha, alpha/score
+│   │   └── fintech.py       ✅ 6 endpoints — subverticals, subvertical detail, overview, unit-economics, comparables, regulatory-risks
 │   └── services/
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
 │       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
@@ -208,6 +210,12 @@ aida-venture-os/
 | GET | `/studio/companies/{id}/milestones` | Hitos con estado achieved |
 | GET | `/studio/alpha` | Alpha metrics donde studio > mercado |
 | GET | `/studio/alpha/score/{id}` | Score de alpha 0–100 por empresa |
+| GET | `/fintech/subverticals` | Lista subverticales — filtros: risk_level, regulatory_complexity |
+| GET | `/fintech/subverticals/{id}` | Detalle con FintechSubverticalSummary |
+| GET | `/fintech/overview` | FintechMarketOverview — resumen del ecosistema |
+| GET | `/fintech/unit-economics` | Unit economics — filtros: startup_id, subvertical_id, metric_name |
+| GET | `/fintech/comparables` | Comparables — filtros: subvertical_id, geography |
+| GET | `/fintech/regulatory-risks` | Riesgos regulatorios — filtros: startup_id, country, impact_level, status |
 
 ---
 
@@ -238,7 +246,7 @@ aida-venture-os/
 - [x] Valuation Intelligence — schemas + service analyze_valuation + router 5 endpoints
 - [x] Fund Simulator — Monte Carlo MOIC/IRR vectorizado con numpy, persiste FundScenario + FundMetrics, 6 endpoints
 - [x] Studio Performance — summary, timeline, alpha score, 8 endpoints, 32 rutas totales
-- [ ] Fintech Deep Dive — unit economics y comparables por subvertical
+- [x] Fintech Deep Dive — subverticals, overview, unit-economics, comparables, regulatory-risks, 6 endpoints, 38 rutas totales
 - [ ] Deal Flow — router + endpoints para pipeline
 - [ ] Reporting básico — lp_profiles + reports
 
