@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -19,8 +19,8 @@ router = APIRouter(prefix="/valuation", tags=["valuation"])
 
 @router.get("/events", response_model=list[ValuationEventRead])
 def list_valuation_events(
-    startup_id: Optional[uuid.UUID] = Query(None),
-    segment_id: Optional[uuid.UUID] = Query(None),
+    startup_id: Optional[uuid.UUID] = Query(None, description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    segment_id: Optional[uuid.UUID] = Query(None, description="UUID del segmento. Ver IDs disponibles en GET /market/segments/options"),
     db: Session = Depends(get_db),
 ):
     q = db.query(ValuationEvent)
@@ -36,7 +36,10 @@ class _EventDetail(ValuationEventRead):
 
 
 @router.get("/events/{event_id}", response_model=_EventDetail)
-def get_valuation_event(event_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_valuation_event(
+    event_id: uuid.UUID = Path(..., description="UUID del valuation event. Obtén IDs llamando GET /valuation/events"),
+    db: Session = Depends(get_db),
+):
     event = db.get(ValuationEvent, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="ValuationEvent no encontrado")
@@ -52,8 +55,8 @@ def get_valuation_event(event_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @router.post("/analyze", response_model=ValuationAnalysisResult)
 def run_analysis(
-    startup_id: uuid.UUID = Body(..., embed=True),
-    segment_id: uuid.UUID = Body(..., embed=True),
+    startup_id: uuid.UUID = Body(..., embed=True, description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    segment_id: uuid.UUID = Body(..., embed=True, description="UUID del segmento. Ver IDs disponibles en GET /market/segments/options"),
     db: Session = Depends(get_db),
 ):
     result = analyze_valuation(db, startup_id, segment_id)
@@ -62,7 +65,10 @@ def run_analysis(
 
 
 @router.get("/drivers/{startup_id}", response_model=list[ValuationDriverRead])
-def list_drivers(startup_id: uuid.UUID, db: Session = Depends(get_db)):
+def list_drivers(
+    startup_id: uuid.UUID = Path(..., description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    db: Session = Depends(get_db),
+):
     return (
         db.query(ValuationDriver)
         .filter(ValuationDriver.startup_id == startup_id)
@@ -72,14 +78,10 @@ def list_drivers(startup_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @router.get("/outliers", response_model=list[OutlierFlagRead])
 def list_outliers(
-    flag_type: Optional[str] = Query(None),
+    flag_type: Optional[FlagType] = Query(None),
     db: Session = Depends(get_db),
 ):
     q = db.query(OutlierFlag)
     if flag_type is not None:
-        try:
-            flag_enum = FlagType(flag_type.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"flag_type inválido: '{flag_type}'")
-        q = q.filter(OutlierFlag.flag_type == flag_enum)
+        q = q.filter(OutlierFlag.flag_type == flag_type)
     return q.order_by(OutlierFlag.flagged_at.desc()).all()

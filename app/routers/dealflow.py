@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
@@ -51,8 +51,8 @@ def _get_deal_or_404(db: Session, deal_id: uuid.UUID) -> DealOpportunity:
 
 @router_deals.get("", response_model=list[DealOpportunityWithStartup])
 def list_deals(
-    status: Optional[str] = Query(None),
-    sourcing_channel_id: Optional[uuid.UUID] = Query(None),
+    status: Optional[DealStatus] = Query(None),
+    sourcing_channel_id: Optional[uuid.UUID] = Query(None, description="UUID del canal. Ver IDs disponibles en GET /sourcing/channels/options"),
     db: Session = Depends(get_db),
 ):
     q = (
@@ -63,11 +63,7 @@ def list_deals(
         )
     )
     if status is not None:
-        try:
-            status_enum = DealStatus(status.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"status inválido: '{status}'")
-        q = q.filter(DealOpportunity.status == status_enum)
+        q = q.filter(DealOpportunity.status == status)
     if sourcing_channel_id is not None:
         q = q.filter(DealOpportunity.sourcing_channel_id == sourcing_channel_id)
 
@@ -110,7 +106,10 @@ def deals_summary(db: Session = Depends(get_db)):
 
 
 @router_deals.get("/{deal_id}", response_model=DealDetailRead)
-def get_deal(deal_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_deal(
+    deal_id: uuid.UUID = Path(..., description="UUID del deal. Obtén IDs llamando GET /deals"),
+    db: Session = Depends(get_db),
+):
     deal = _get_deal_or_404(db, deal_id)
     return DealDetailRead(
         deal=_enrich_deal(deal),
@@ -121,7 +120,10 @@ def get_deal(deal_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router_deals.get("/{deal_id}/thesis", response_model=dict)
-def deal_thesis(deal_id: uuid.UUID, db: Session = Depends(get_db)):
+def deal_thesis(
+    deal_id: uuid.UUID = Path(..., description="UUID del deal. Obtén IDs llamando GET /deals"),
+    db: Session = Depends(get_db),
+):
     deal = _get_deal_or_404(db, deal_id)
     alignments = [ThesisAlignmentRead.model_validate(t) for t in deal.thesis_alignments]
 
@@ -139,7 +141,10 @@ def deal_thesis(deal_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router_deals.get("/{deal_id}/checklist", response_model=dict)
-def deal_checklist(deal_id: uuid.UUID, db: Session = Depends(get_db)):
+def deal_checklist(
+    deal_id: uuid.UUID = Path(..., description="UUID del deal. Obtén IDs llamando GET /deals"),
+    db: Session = Depends(get_db),
+):
     deal = _get_deal_or_404(db, deal_id)
     items = [DDChecklistRead.model_validate(c) for c in deal.dd_checklists]
 
@@ -176,7 +181,10 @@ def deal_checklist(deal_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router_deals.get("/{deal_id}/memos", response_model=list[ICMemoRead])
-def deal_memos(deal_id: uuid.UUID, db: Session = Depends(get_db)):
+def deal_memos(
+    deal_id: uuid.UUID = Path(..., description="UUID del deal. Obtén IDs llamando GET /deals"),
+    db: Session = Depends(get_db),
+):
     deal = _get_deal_or_404(db, deal_id)
     return sorted(
         [ICMemoRead.model_validate(m) for m in deal.ic_memos],
@@ -186,6 +194,21 @@ def deal_memos(deal_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 # ── /sourcing ─────────────────────────────────────────────────────────────────
+
+@router_sourcing.get("/channels/options", response_model=list[dict])
+def channel_options(db: Session = Depends(get_db)):
+    """Lista compacta de canales de sourcing para usar como referencia de IDs en otros endpoints."""
+    channels = (
+        db.query(SourcingChannel)
+        .filter(SourcingChannel.active.is_(True))
+        .order_by(SourcingChannel.name)
+        .all()
+    )
+    return [
+        {"id": str(c.id), "name": c.name, "type": c.type.value}
+        for c in channels
+    ]
+
 
 @router_sourcing.get("/channels", response_model=list[SourcingChannelRead])
 def list_channels(db: Session = Depends(get_db)):
@@ -198,7 +221,10 @@ def list_channels(db: Session = Depends(get_db)):
 
 
 @router_sourcing.get("/channels/{channel_id}/deals", response_model=list[DealOpportunityWithStartup])
-def channel_deals(channel_id: uuid.UUID, db: Session = Depends(get_db)):
+def channel_deals(
+    channel_id: uuid.UUID = Path(..., description="UUID del canal. Ver IDs disponibles en GET /sourcing/channels/options"),
+    db: Session = Depends(get_db),
+):
     channel = db.get(SourcingChannel, channel_id)
     if channel is None:
         raise HTTPException(status_code=404, detail="Canal de sourcing no encontrado")

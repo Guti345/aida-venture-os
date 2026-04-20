@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
@@ -76,30 +76,35 @@ def _build_subvertical_summary(db: Session, sv: FintechSubvertical) -> FintechSu
     )
 
 
+@router.get("/subverticals/options", response_model=list[dict])
+def subvertical_options(db: Session = Depends(get_db)):
+    """Lista compacta de subverticales para usar como referencia de IDs en otros endpoints."""
+    subverticals = db.query(FintechSubvertical).order_by(FintechSubvertical.name).all()
+    return [
+        {"id": str(sv.id), "name": sv.name, "risk_level": sv.risk_level.value}
+        for sv in subverticals
+    ]
+
+
 @router.get("/subverticals", response_model=list[FintechSubverticalRead])
 def list_subverticals(
-    risk_level: Optional[str] = Query(None),
-    regulatory_complexity: Optional[str] = Query(None),
+    risk_level: Optional[RiskLevel] = Query(None),
+    regulatory_complexity: Optional[RegulatoryComplexity] = Query(None),
     db: Session = Depends(get_db),
 ):
     q = db.query(FintechSubvertical)
     if risk_level is not None:
-        try:
-            rl = RiskLevel(risk_level.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"risk_level inválido: '{risk_level}'")
-        q = q.filter(FintechSubvertical.risk_level == rl)
+        q = q.filter(FintechSubvertical.risk_level == risk_level)
     if regulatory_complexity is not None:
-        try:
-            rc = RegulatoryComplexity(regulatory_complexity.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"regulatory_complexity inválido: '{regulatory_complexity}'")
-        q = q.filter(FintechSubvertical.regulatory_complexity == rc)
+        q = q.filter(FintechSubvertical.regulatory_complexity == regulatory_complexity)
     return q.order_by(FintechSubvertical.name).all()
 
 
 @router.get("/subverticals/{subvertical_id}", response_model=FintechSubverticalSummary)
-def get_subvertical(subvertical_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_subvertical(
+    subvertical_id: uuid.UUID = Path(..., description="UUID del subvertical. Ver IDs disponibles en GET /fintech/subverticals/options"),
+    db: Session = Depends(get_db),
+):
     sv = db.get(FintechSubvertical, subvertical_id)
     if sv is None:
         raise HTTPException(status_code=404, detail="Subvertical no encontrado")
@@ -133,8 +138,8 @@ def fintech_overview(db: Session = Depends(get_db)):
 
 @router.get("/unit-economics", response_model=list[FintechUnitEconomicsRead])
 def list_unit_economics(
-    startup_id: Optional[uuid.UUID] = Query(None),
-    subvertical_id: Optional[uuid.UUID] = Query(None),
+    startup_id: Optional[uuid.UUID] = Query(None, description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    subvertical_id: Optional[uuid.UUID] = Query(None, description="UUID del subvertical. Ver IDs disponibles en GET /fintech/subverticals/options"),
     metric_name: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
@@ -150,7 +155,7 @@ def list_unit_economics(
 
 @router.get("/comparables", response_model=list[FintechComparableRead])
 def list_comparables(
-    subvertical_id: Optional[uuid.UUID] = Query(None),
+    subvertical_id: Optional[uuid.UUID] = Query(None, description="UUID del subvertical. Ver IDs disponibles en GET /fintech/subverticals/options"),
     geography: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
@@ -164,10 +169,10 @@ def list_comparables(
 
 @router.get("/regulatory-risks", response_model=list[RegulatoryRiskRead])
 def list_regulatory_risks(
-    startup_id: Optional[uuid.UUID] = Query(None),
+    startup_id: Optional[uuid.UUID] = Query(None, description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
     country: Optional[str] = Query(None),
-    impact_level: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
+    impact_level: Optional[ImpactLevel] = Query(None),
+    status: Optional[RegulatoryRiskStatus] = Query(None),
     db: Session = Depends(get_db),
 ):
     q = db.query(RegulatoryRisk)
@@ -176,15 +181,7 @@ def list_regulatory_risks(
     if country is not None:
         q = q.filter(RegulatoryRisk.country == country.upper())
     if impact_level is not None:
-        try:
-            il = ImpactLevel(impact_level.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"impact_level inválido: '{impact_level}'")
-        q = q.filter(RegulatoryRisk.impact_level == il)
+        q = q.filter(RegulatoryRisk.impact_level == impact_level)
     if status is not None:
-        try:
-            st = RegulatoryRiskStatus(status.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"status inválido: '{status}'")
-        q = q.filter(RegulatoryRisk.status == st)
+        q = q.filter(RegulatoryRisk.status == status)
     return q.order_by(RegulatoryRisk.impact_level, RegulatoryRisk.updated_at.desc()).all()

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -26,6 +26,25 @@ def studio_summary(db: Session = Depends(get_db)):
     return get_studio_summary(db)
 
 
+@router.get("/companies/options", response_model=list[dict])
+def company_options(db: Session = Depends(get_db)):
+    """Lista compacta de empresas del studio para usar como referencia de IDs en otros endpoints."""
+    companies = (
+        db.query(StudioCompany)
+        .options(joinedload(StudioCompany.startup))
+        .order_by(StudioCompany.current_studio_phase)
+        .all()
+    )
+    return [
+        {
+            "id": str(sc.id),
+            "startup_name": sc.startup.name if sc.startup else None,
+            "current_studio_phase": sc.current_studio_phase.value,
+        }
+        for sc in companies
+    ]
+
+
 @router.get("/companies", response_model=list[StudioCompanyWithStartup])
 def list_companies(db: Session = Depends(get_db)):
     companies = (
@@ -45,7 +64,10 @@ def list_companies(db: Session = Depends(get_db)):
 
 
 @router.get("/companies/{studio_company_id}", response_model=StudioCompanyWithStartup)
-def get_company(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_company(
+    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    db: Session = Depends(get_db),
+):
     sc = (
         db.query(StudioCompany)
         .options(joinedload(StudioCompany.startup))
@@ -62,12 +84,18 @@ def get_company(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/companies/{studio_company_id}/timeline", response_model=list[TimelineEvent])
-def company_timeline(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
+def company_timeline(
+    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    db: Session = Depends(get_db),
+):
     return get_company_timeline(db, studio_company_id)
 
 
 @router.get("/companies/{studio_company_id}/costs", response_model=list[BuildCostRead])
-def company_costs(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
+def company_costs(
+    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    db: Session = Depends(get_db),
+):
     _get_sc_or_404(db, studio_company_id)
     return (
         db.query(BuildCost)
@@ -78,7 +106,10 @@ def company_costs(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/companies/{studio_company_id}/milestones", response_model=list[StudioMilestoneRead])
-def company_milestones(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
+def company_milestones(
+    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    db: Session = Depends(get_db),
+):
     _get_sc_or_404(db, studio_company_id)
     return (
         db.query(StudioMilestone)
@@ -99,5 +130,8 @@ def list_alpha_metrics(db: Session = Depends(get_db)):
 
 
 @router.get("/alpha/score/{studio_company_id}")
-def alpha_score(studio_company_id: uuid.UUID, db: Session = Depends(get_db)):
+def alpha_score(
+    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    db: Session = Depends(get_db),
+):
     return calculate_alpha_score(db, studio_company_id)

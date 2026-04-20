@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -14,10 +14,20 @@ from app.services.percentile import calculate_percentile
 router = APIRouter(prefix="/startups", tags=["startups"])
 
 
+@router.get("/options", response_model=list[dict])
+def startup_options(db: Session = Depends(get_db)):
+    """Lista compacta de startups para usar como referencia de IDs en otros endpoints."""
+    startups = db.query(Startup).order_by(Startup.name).all()
+    return [
+        {"id": str(s.id), "name": s.name, "sector": s.sector, "stage": s.stage.value}
+        for s in startups
+    ]
+
+
 @router.get("", response_model=list[StartupList])
 def list_startups(
     sector: Optional[str] = Query(None),
-    stage: Optional[str] = Query(None),
+    stage: Optional[StartupStage] = Query(None),
     country: Optional[str] = Query(None),
     studio_built: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
@@ -27,11 +37,7 @@ def list_startups(
     if sector is not None:
         q = q.filter(Startup.sector.ilike(f"%{sector}%"))
     if stage is not None:
-        try:
-            stage_enum = StartupStage(stage.lower())
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"stage inválido: '{stage}'")
-        q = q.filter(Startup.stage == stage_enum)
+        q = q.filter(Startup.stage == stage)
     if country is not None:
         q = q.filter(Startup.country == country.upper())
     if studio_built is not None:
@@ -41,7 +47,10 @@ def list_startups(
 
 
 @router.get("/{startup_id}", response_model=StartupRead)
-def get_startup(startup_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_startup(
+    startup_id: uuid.UUID = Path(..., description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    db: Session = Depends(get_db),
+):
     startup = db.get(Startup, startup_id)
     if startup is None:
         raise HTTPException(status_code=404, detail="Startup no encontrada")
@@ -50,7 +59,7 @@ def get_startup(startup_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @router.get("/{startup_id}/metrics", response_model=list[MetricSnapshotRead])
 def list_metrics(
-    startup_id: uuid.UUID,
+    startup_id: uuid.UUID = Path(..., description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
     metric_name: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
@@ -67,9 +76,9 @@ def list_metrics(
 
 @router.get("/{startup_id}/percentile", response_model=PercentileResult)
 def get_percentile(
-    startup_id: uuid.UUID,
+    startup_id: uuid.UUID = Path(..., description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
     metric_name: str = Query(...),
-    segment_id: uuid.UUID = Query(...),
+    segment_id: uuid.UUID = Query(..., description="UUID del segmento. Ver IDs disponibles en GET /market/segments/options"),
     db: Session = Depends(get_db),
 ):
     if db.get(Startup, startup_id) is None:
@@ -78,7 +87,10 @@ def get_percentile(
 
 
 @router.get("/{startup_id}/metrics/latest", response_model=dict[str, MetricSnapshotRead])
-def latest_metrics(startup_id: uuid.UUID, db: Session = Depends(get_db)):
+def latest_metrics(
+    startup_id: uuid.UUID = Path(..., description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
+    db: Session = Depends(get_db),
+):
     if db.get(Startup, startup_id) is None:
         raise HTTPException(status_code=404, detail="Startup no encontrada")
 
