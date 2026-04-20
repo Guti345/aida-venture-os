@@ -10,8 +10,8 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 **Nombre:** AIDA Venture OS  
 **Descripción:** Sistema operativo de decisión para venture capital y venture studio.  
 **Empresa:** AIDA Ventures + Scale Radical  
-**Estado actual:** Fase 1 completa — Motor de comparabilidad operativo con 503 registros en DB  
-**Objetivo inmediato:** Fase 2 — Valuation Intel, Fund Simulator Monte Carlo, Studio router  
+**Estado actual:** Fase 2 completa — 50 rutas operativas, motor de comparabilidad + simulador + studio + reporting para LPs  
+**Objetivo inmediato:** Fase 3 — Roles de usuario, formulario ingesta de métricas, tests por dominio  
 
 ---
 
@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — 7 routers registrados (startups, market, valuation, fund, studio, fintech, deals+sourcing)
+│   ├── main.py              ✅ FastAPI entry point — 8 routers registrados (startups, market, valuation, fund, studio, fintech, deals+sourcing, reporting) — 50 rutas totales
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -55,7 +55,8 @@ aida-venture-os/
 │   │   ├── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, FundScenarioRead, ScenarioInput, ScenarioResult
 │   │   ├── studio.py        ✅ StudioCompanyRead, StudioCompanyWithStartup, BuildCostRead, StudioMilestoneRead, AlphaMetricRead, StudioSummary, TimelineEvent
 │   │   ├── fintech.py       ✅ FintechSubverticalRead, FintechUnitEconomicsRead, RegulatoryRiskRead, FintechComparableRead, FintechSubverticalSummary, FintechMarketOverview
-│   │   └── dealflow.py      ✅ SourcingChannelRead, DealOpportunityRead, DealOpportunityWithStartup, ThesisAlignmentRead, DDChecklistRead, ICMemoRead, DealSummary, DealDetailRead
+│   │   ├── dealflow.py      ✅ SourcingChannelRead, DealOpportunityRead, DealOpportunityWithStartup, ThesisAlignmentRead, DDChecklistRead, ICMemoRead, DealSummary, DealDetailRead
+│   │   └── reporting.py     ✅ LPProfileRead, ReportRead, NarrativeBlockRead, ICDecisionRead, LPReportSummary, PortfolioSnapshotItem
 │   ├── routers/
 │   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
 │   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
@@ -63,7 +64,8 @@ aida-venture-os/
 │   │   ├── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, simulate/quick
 │   │   ├── studio.py        ✅ 8 endpoints — summary, companies, detail, timeline, costs, milestones, alpha, alpha/score
 │   │   ├── fintech.py       ✅ 6 endpoints — subverticals, subvertical detail, overview, unit-economics, comparables, regulatory-risks
-│   │   └── dealflow.py      ✅ 8 endpoints — /deals (lista, summary, detail, thesis, checklist, memos) + /sourcing (channels, channel/deals)
+│   │   ├── dealflow.py      ✅ 8 endpoints — /deals (lista, summary, detail, thesis, checklist, memos) + /sourcing (channels, channel/deals)
+│   │   └── reporting.py     ✅ 4 endpoints — lp-summary, portfolio-snapshot, ic-decisions, pipeline-status
 │   └── services/
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
 │       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
@@ -226,6 +228,10 @@ aida-venture-os/
 | GET | `/deals/{deal_id}/memos` | IC memos ordenados por version desc |
 | GET | `/sourcing/channels` | Canales de sourcing activos |
 | GET | `/sourcing/channels/{channel_id}/deals` | Deals de un canal específico |
+| GET | `/reports/lp-summary` | Resumen ejecutivo LP — MOIC, IRR, portafolio, narrative |
+| GET | `/reports/portfolio-snapshot` | Snapshot por startup — ARR, MRR, NRR, burn, runway |
+| GET | `/reports/ic-decisions` | Decisiones IC ordenadas por fecha desc |
+| GET | `/reports/pipeline-status` | Estado del pipeline activo con days_in_pipeline |
 
 ---
 
@@ -252,17 +258,15 @@ aida-venture-os/
 - [x] `data/load_seed_extended.py` — currencies, tags, fintech_subverticals, sourcing_channels, deals, ic_memos, valuation_events
 - [x] 503 registros totales en DB
 
-### Fase 2 — Simulador y Studio ← ESTAMOS AQUÍ
+### Fase 2 — Simulador y Studio ✅ COMPLETA
 - [x] Valuation Intelligence — schemas + service analyze_valuation + router 5 endpoints
 - [x] Fund Simulator — Monte Carlo MOIC/IRR vectorizado con numpy, persiste FundScenario + FundMetrics, 6 endpoints
 - [x] Studio Performance — summary, timeline, alpha score, 8 endpoints, 32 rutas totales
 - [x] Fintech Deep Dive — subverticals, overview, unit-economics, comparables, regulatory-risks, 6 endpoints, 38 rutas totales
 - [x] Deal Flow & Sourcing — pipeline completo con thesis scoring, DD progress por categoría, IC memos, 8 endpoints, 46 rutas totales
-- [ ] Reporting básico — lp_profiles + reports
+- [x] Reporting básico — generate_lp_report, portfolio snapshot, ic-decisions, pipeline-status, 4 endpoints, 50 rutas totales
 
-### Fase 3 — Demo completo
-- [ ] Deal Flow & Sourcing completo
-- [ ] Reporting para LPs
+### Fase 3 — Demo completo ← ESTAMOS AQUÍ
 - [ ] Sistema de roles (gp / analyst / studio_operator / viewer)
 - [ ] Formulario de ingesta de métricas para startups
 - [ ] Tests por dominio
