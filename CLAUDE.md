@@ -188,16 +188,16 @@ aida-venture-os/
 |---|---|---|
 | GET | `/` | Bienvenida |
 | GET | `/health` | Estado del servidor |
-| GET | `/startups` | Lista con filtros: sector, stage, country, studio_built |
-| GET | `/startups/{id}` | Detalle de startup |
-| GET | `/startups/{id}/metrics` | Métricas históricas |
-| GET | `/startups/{id}/metrics/latest` | Último snapshot por métrica |
-| GET | `/startups/{id}/percentile` | Posición percentil vs benchmark |
+| GET | `/startups` | Lista con filtros: name (parcial), sector, stage (dropdown), country, studio_built |
+| GET | `/startups/{id}` | Detalle de startup por UUID |
+| GET | `/startups/{startup_name}/metrics` | Métricas históricas por nombre, metric_name como dropdown |
+| GET | `/startups/{startup_name}/metrics/latest` | Último snapshot por métrica, por nombre de startup |
+| GET | `/startups/{startup_name}/percentile` | Percentil vs benchmark — usa sector/stage/geography en lugar de UUID |
 | GET | `/market/segments` | Segmentos de mercado con filtros |
-| GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 |
+| GET | `/market/benchmarks` | Benchmarks — sector+stage+geography resuelven segmento automáticamente |
 | GET | `/valuation/events` | Lista valuation events — filtros: startup_id, segment_id |
 | GET | `/valuation/events/{event_id}` | Detalle de evento con multiple_analyses |
-| POST | `/valuation/analyze` | Ejecuta análisis completo — body: startup_id, segment_id |
+| POST | `/valuation/analyze` | Ejecuta análisis — body: startup_name, segment_sector, segment_stage, segment_geography |
 | GET | `/valuation/drivers/{startup_id}` | Drivers de valoración de una startup |
 | GET | `/valuation/outliers` | Outlier flags — filtro: flag_type |
 | GET | `/fund` | Datos del fondo activo |
@@ -205,13 +205,13 @@ aida-venture-os/
 | GET | `/fund/metrics` | Métricas actuales (último FundMetric) |
 | GET | `/fund/scenarios` | Escenarios Monte Carlo guardados |
 | POST | `/fund/simulate` | Ejecuta Monte Carlo — body: ScenarioInput |
-| GET | `/fund/simulate/quick` | Monte Carlo con parámetros default |
+| GET | `/fund/simulate/quick` | Monte Carlo con preset: scenario_label (conservador/base/optimista) + overrides opcionales |
 | GET | `/studio/summary` | Resumen del portfolio del studio |
 | GET | `/studio/companies` | Lista empresas con startup_name y fase |
 | GET | `/studio/companies/{id}` | Detalle de empresa del studio |
-| GET | `/studio/companies/{id}/timeline` | Línea de tiempo cronológica |
-| GET | `/studio/companies/{id}/costs` | Breakdown de build_costs por tipo |
-| GET | `/studio/companies/{id}/milestones` | Hitos con estado achieved |
+| GET | `/studio/companies/{startup_name}/timeline` | Línea de tiempo cronológica por nombre de startup |
+| GET | `/studio/companies/{startup_name}/costs` | Breakdown de build_costs por nombre de startup |
+| GET | `/studio/companies/{startup_name}/milestones` | Hitos con estado achieved por nombre de startup |
 | GET | `/studio/alpha` | Alpha metrics donde studio > mercado |
 | GET | `/studio/alpha/score/{id}` | Score de alpha 0–100 por empresa |
 | GET | `/fintech/subverticals` | Lista subverticales — filtros: risk_level, regulatory_complexity |
@@ -220,7 +220,7 @@ aida-venture-os/
 | GET | `/fintech/unit-economics` | Unit economics — filtros: startup_id, subvertical_id, metric_name |
 | GET | `/fintech/comparables` | Comparables — filtros: subvertical_id, geography |
 | GET | `/fintech/regulatory-risks` | Riesgos regulatorios — filtros: startup_id, country, impact_level, status |
-| GET | `/deals` | Lista deals — filtros: status, sourcing_channel_id |
+| GET | `/deals` | Lista deals — filtros: status (dropdown), startup_name (parcial), sourcing_channel_id |
 | GET | `/deals/summary` | Estadísticas del pipeline (by_status, avg_thesis_score, deals_this_month) |
 | GET | `/deals/{deal_id}` | Deal completo con thesis, DD checklist e IC memos anidados |
 | GET | `/deals/{deal_id}/thesis` | Thesis alignments con score total y % |

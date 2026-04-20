@@ -43,6 +43,13 @@ class ValuationAnalysisResult(BaseModel):
     entry_discipline_summary: str
 
 
+class ValuationAnalyzeRequest(BaseModel):
+    startup_name: str
+    segment_sector: str
+    segment_stage: str
+    segment_geography: str = "LATAM"
+
+
 class ValuationDriverRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

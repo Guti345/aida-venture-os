@@ -1,9 +1,11 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Path
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
+from app.models.startup import Startup
 from app.models.studio import AlphaMetric, BuildCost, StudioCompany, StudioMilestone
 from app.schemas.studio import (
     AlphaMetricRead, BuildCostRead, StudioCompanyRead, StudioCompanyWithStartup,
@@ -21,6 +23,26 @@ def _get_sc_or_404(db: Session, studio_company_id: uuid.UUID) -> StudioCompany:
     return sc
 
 
+def _get_sc_by_startup_name(db: Session, startup_name: str) -> StudioCompany:
+    startup = (
+        db.query(Startup)
+        .filter(func.lower(Startup.name) == startup_name.lower())
+        .first()
+    )
+    if startup is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Startup '{startup_name}' no encontrada. Ver nombres en GET /studio/companies/options",
+        )
+    sc = db.query(StudioCompany).filter(StudioCompany.startup_id == startup.id).first()
+    if sc is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"'{startup_name}' no es una empresa del venture studio. Ver lista en GET /studio/companies/options",
+        )
+    return sc
+
+
 @router.get("/summary", response_model=StudioSummary)
 def studio_summary(db: Session = Depends(get_db)):
     return get_studio_summary(db)
@@ -28,7 +50,7 @@ def studio_summary(db: Session = Depends(get_db)):
 
 @router.get("/companies/options", response_model=list[dict])
 def company_options(db: Session = Depends(get_db)):
-    """Lista compacta de empresas del studio para usar como referencia de IDs en otros endpoints."""
+    """Lista compacta de empresas del studio para usar como referencia de nombres e IDs."""
     companies = (
         db.query(StudioCompany)
         .options(joinedload(StudioCompany.startup))
@@ -83,37 +105,38 @@ def get_company(
     return obj
 
 
-@router.get("/companies/{studio_company_id}/timeline", response_model=list[TimelineEvent])
+@router.get("/companies/{startup_name}/timeline", response_model=list[TimelineEvent])
 def company_timeline(
-    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    startup_name: str = Path(..., description="Nombre de la startup del studio, e.g. 'EduStack'. Ver nombres en GET /studio/companies/options"),
     db: Session = Depends(get_db),
 ):
-    return get_company_timeline(db, studio_company_id)
+    sc = _get_sc_by_startup_name(db, startup_name)
+    return get_company_timeline(db, sc.id)
 
 
-@router.get("/companies/{studio_company_id}/costs", response_model=list[BuildCostRead])
+@router.get("/companies/{startup_name}/costs", response_model=list[BuildCostRead])
 def company_costs(
-    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    startup_name: str = Path(..., description="Nombre de la startup del studio, e.g. 'EduStack'. Ver nombres en GET /studio/companies/options"),
     db: Session = Depends(get_db),
 ):
-    _get_sc_or_404(db, studio_company_id)
+    sc = _get_sc_by_startup_name(db, startup_name)
     return (
         db.query(BuildCost)
-        .filter(BuildCost.studio_company_id == studio_company_id)
+        .filter(BuildCost.studio_company_id == sc.id)
         .order_by(BuildCost.period_date)
         .all()
     )
 
 
-@router.get("/companies/{studio_company_id}/milestones", response_model=list[StudioMilestoneRead])
+@router.get("/companies/{startup_name}/milestones", response_model=list[StudioMilestoneRead])
 def company_milestones(
-    studio_company_id: uuid.UUID = Path(..., description="UUID de la empresa del studio. Ver IDs disponibles en GET /studio/companies/options"),
+    startup_name: str = Path(..., description="Nombre de la startup del studio, e.g. 'EduStack'. Ver nombres en GET /studio/companies/options"),
     db: Session = Depends(get_db),
 ):
-    _get_sc_or_404(db, studio_company_id)
+    sc = _get_sc_by_startup_name(db, startup_name)
     return (
         db.query(StudioMilestone)
-        .filter(StudioMilestone.studio_company_id == studio_company_id)
+        .filter(StudioMilestone.studio_company_id == sc.id)
         .order_by(StudioMilestone.actual_date.nulls_last(), StudioMilestone.target_date)
         .all()
     )

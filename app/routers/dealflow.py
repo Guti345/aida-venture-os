@@ -11,6 +11,7 @@ from app.models.dealflow import (
     DDChecklist, DDItemStatus, DealOpportunity, DealStatus,
     ICMemo, SourcingChannel, ThesisAlignment,
 )
+from app.models.startup import Startup
 from app.schemas.dealflow import (
     DDChecklistRead, DealDetailRead, DealOpportunityWithStartup,
     DealSummary, ICMemoRead, SourcingChannelRead, ThesisAlignmentRead,
@@ -52,6 +53,7 @@ def _get_deal_or_404(db: Session, deal_id: uuid.UUID) -> DealOpportunity:
 @router_deals.get("", response_model=list[DealOpportunityWithStartup])
 def list_deals(
     status: Optional[DealStatus] = Query(None),
+    startup_name: Optional[str] = Query(None, description="Búsqueda parcial por nombre de startup, e.g. 'Fin'"),
     sourcing_channel_id: Optional[uuid.UUID] = Query(None, description="UUID del canal. Ver IDs disponibles en GET /sourcing/channels/options"),
     db: Session = Depends(get_db),
 ):
@@ -64,6 +66,10 @@ def list_deals(
     )
     if status is not None:
         q = q.filter(DealOpportunity.status == status)
+    if startup_name is not None:
+        q = q.join(Startup, DealOpportunity.startup_id == Startup.id).filter(
+            Startup.name.ilike(f"%{startup_name}%")
+        )
     if sourcing_channel_id is not None:
         q = q.filter(DealOpportunity.sourcing_channel_id == sourcing_channel_id)
 
@@ -81,7 +87,6 @@ def deals_summary(db: Session = Depends(get_db)):
         key = d.status.value
         by_status[key] = by_status.get(key, 0) + 1
 
-    # Score promedio de thesis (suma(score) / suma(max_score) * 10)
     rows = db.query(ThesisAlignment.score, ThesisAlignment.max_score).all()
     if rows:
         total_score = sum(r.score for r in rows)
@@ -90,7 +95,6 @@ def deals_summary(db: Session = Depends(get_db)):
     else:
         avg_thesis = None
 
-    # Deals identificados en el mes en curso
     today = date.today()
     this_month = sum(
         1 for d in deals
@@ -148,7 +152,6 @@ def deal_checklist(
     deal = _get_deal_or_404(db, deal_id)
     items = [DDChecklistRead.model_validate(c) for c in deal.dd_checklists]
 
-    # Progreso por categoría
     by_category: dict[str, dict] = {}
     for item in items:
         cat = item.item_category.value

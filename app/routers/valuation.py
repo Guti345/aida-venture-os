@@ -2,19 +2,58 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.market import MarketSegment, MarketStage
+from app.models.startup import Startup
 from app.models.valuation import (
     FlagType, MultipleAnalysis, OutlierFlag, ValuationDriver, ValuationEvent,
 )
 from app.schemas.valuation import (
     MultipleAnalysisRead, OutlierFlagRead, ValuationAnalysisResult,
-    ValuationDriverRead, ValuationEventRead,
+    ValuationAnalyzeRequest, ValuationDriverRead, ValuationEventRead,
 )
 from app.services.valuation import analyze_valuation
 
 router = APIRouter(prefix="/valuation", tags=["valuation"])
+
+
+def _resolve_startup(db: Session, startup_name: str) -> Startup:
+    startup = (
+        db.query(Startup)
+        .filter(func.lower(Startup.name) == startup_name.lower())
+        .first()
+    )
+    if startup is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Startup '{startup_name}' no encontrada. Ver nombres en GET /startups/options",
+        )
+    return startup
+
+
+def _resolve_segment(db: Session, sector: str, stage: str, geography: str) -> MarketSegment:
+    try:
+        stage_enum = MarketStage(stage.lower())
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"segment_stage inválido: '{stage}'. Valores: {[e.value for e in MarketStage]}")
+    seg = (
+        db.query(MarketSegment)
+        .filter(
+            MarketSegment.sector.ilike(f"%{sector}%"),
+            MarketSegment.stage == stage_enum,
+            MarketSegment.geography.ilike(f"%{geography}%"),
+        )
+        .first()
+    )
+    if seg is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Segmento no encontrado para sector='{sector}', stage='{stage}', geography='{geography}'. Ver opciones en GET /market/segments/options",
+        )
+    return seg
 
 
 @router.get("/events", response_model=list[ValuationEventRead])
@@ -55,11 +94,15 @@ def get_valuation_event(
 
 @router.post("/analyze", response_model=ValuationAnalysisResult)
 def run_analysis(
-    startup_id: uuid.UUID = Body(..., embed=True, description="UUID de la startup. Ver IDs disponibles en GET /startups/options"),
-    segment_id: uuid.UUID = Body(..., embed=True, description="UUID del segmento. Ver IDs disponibles en GET /market/segments/options"),
+    body: ValuationAnalyzeRequest,
     db: Session = Depends(get_db),
 ):
-    result = analyze_valuation(db, startup_id, segment_id)
+    """Ejecuta análisis de valoración por nombre de startup y segmento legible.
+    Ejemplo: startup_name='FinStack', segment_sector='Fintech', segment_stage='seed', segment_geography='LATAM'
+    """
+    startup = _resolve_startup(db, body.startup_name)
+    segment = _resolve_segment(db, body.segment_sector, body.segment_stage, body.segment_geography)
+    result = analyze_valuation(db, startup.id, segment.id)
     db.commit()
     return result
 
