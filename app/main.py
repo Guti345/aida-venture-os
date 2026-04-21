@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import fintech, fund, market, reporting, startups, studio, valuation
+from app.routers import auth, fintech, fund, market, reporting, startups, studio, valuation
 from app.routers.dealflow import router_deals, router_sourcing
+from app.services.auth import require_analyst, require_gp
 
 app = FastAPI(
     title="AIDA Venture OS",
@@ -28,6 +29,7 @@ def root():
     }
 
 
+app.include_router(auth.router)
 app.include_router(startups.router)
 app.include_router(market.router)
 app.include_router(valuation.router)

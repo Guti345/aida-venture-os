@@ -70,3 +70,28 @@ class MetricSnapshotCreate(BaseModel):
 
 class StartupWithMetrics(StartupRead):
     metrics: list[MetricSnapshotRead] = []
+
+
+class MetricIngestionForm(BaseModel):
+    startup_name: str
+    period_date: date
+    arr_usd: Optional[float] = None
+    mrr_usd: Optional[float] = None
+    mom_growth_pct: Optional[float] = None
+    burn_rate_monthly_usd: Optional[float] = None
+    runway_months: Optional[float] = None
+    gross_margin_pct: Optional[float] = None
+    active_customers: Optional[int] = None
+    cac_usd: Optional[float] = None
+    ltv_usd: Optional[float] = None
+    nrr_pct: Optional[float] = None
+    headcount: Optional[int] = None
+    notes: Optional[str] = None
+
+
+class MetricIngestionResult(BaseModel):
+    startup_name: str
+    period_date: date
+    metrics_saved: int
+    skipped: int
+    warnings: list[str] = []

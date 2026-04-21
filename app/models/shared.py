@@ -36,6 +36,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role"), nullable=False
     )
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)

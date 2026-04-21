@@ -15,6 +15,8 @@ from app.schemas.valuation import (
     MultipleAnalysisRead, OutlierFlagRead, ValuationAnalysisResult,
     ValuationAnalyzeRequest, ValuationDriverRead, ValuationEventRead,
 )
+from app.models.shared import User
+from app.services.auth import require_analyst
 from app.services.valuation import analyze_valuation
 
 router = APIRouter(prefix="/valuation", tags=["valuation"])
@@ -96,6 +98,7 @@ def get_valuation_event(
 def run_analysis(
     body: ValuationAnalyzeRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(require_analyst),
 ):
     """Ejecuta análisis de valoración por nombre de startup y segmento legible.
     Ejemplo: startup_name='FinStack', segment_sector='Fintech', segment_stage='seed', segment_geography='LATAM'

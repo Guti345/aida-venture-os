@@ -12,6 +12,8 @@ from app.schemas.fund import (
     FundMetricsRead, FundRead, FundScenarioRead, InvestmentRead,
     ScenarioInput, ScenarioResult,
 )
+from app.models.shared import User
+from app.services.auth import require_analyst
 from app.services.simulator import run_monte_carlo
 
 router = APIRouter(prefix="/fund", tags=["fund"])
@@ -84,7 +86,7 @@ def list_scenarios(db: Session = Depends(get_db)):
 
 
 @router.post("/simulate", response_model=ScenarioResult)
-def simulate(inp: ScenarioInput, db: Session = Depends(get_db)):
+def simulate(inp: ScenarioInput, db: Session = Depends(get_db), _user: User = Depends(require_analyst)):
     result = run_monte_carlo(db, inp)
     db.commit()
     return result

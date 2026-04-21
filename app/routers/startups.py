@@ -8,9 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.market import MarketSegment, MarketStage
+from app.models.shared import User
 from app.models.startup import MetricSnapshot, Startup, StartupStage, StartupStatus
 from app.schemas.market import PercentileResult
-from app.schemas.startup import MetricSnapshotRead, StartupList, StartupRead, StartupWithMetrics
+from app.schemas.startup import MetricIngestionForm, MetricIngestionResult, MetricSnapshotRead, StartupList, StartupRead, StartupWithMetrics
+from app.services.auth import require_analyst
+from app.services.importer import ingest_metrics
 from app.services.percentile import calculate_percentile
 
 router = APIRouter(prefix="/startups", tags=["startups"])
@@ -117,6 +120,15 @@ def get_startup(
     if startup is None:
         raise HTTPException(status_code=404, detail="Startup no encontrada")
     return startup
+
+
+@router.post("/ingest-metrics", response_model=MetricIngestionResult)
+def ingest_metrics_endpoint(
+    form: MetricIngestionForm,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_analyst),
+):
+    return ingest_metrics(db, form)
 
 
 @router.get("/{startup_name}/metrics", response_model=list[MetricSnapshotRead])

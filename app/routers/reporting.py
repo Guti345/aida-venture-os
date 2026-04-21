@@ -6,13 +6,15 @@ from app.database import get_db
 from app.models.dealflow import DealOpportunity, DealStatus
 from app.models.reporting import ICDecision
 from app.schemas.reporting import ICDecisionRead, LPReportSummary, PortfolioSnapshotItem
+from app.models.shared import User
+from app.services.auth import require_analyst
 from app.services.reporter import generate_lp_report, get_portfolio_snapshot
 
 router = APIRouter(prefix="/reports", tags=["reporting"])
 
 
 @router.get("/lp-summary", response_model=LPReportSummary)
-def lp_summary(db: Session = Depends(get_db)):
+def lp_summary(db: Session = Depends(get_db), _user: User = Depends(require_analyst)):
     return generate_lp_report(db)
 
 

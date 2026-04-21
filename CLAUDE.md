@@ -10,8 +10,8 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 **Nombre:** AIDA Venture OS  
 **Descripción:** Sistema operativo de decisión para venture capital y venture studio.  
 **Empresa:** AIDA Ventures + Scale Radical  
-**Estado actual:** Fase 2 completa — 50 rutas operativas, motor de comparabilidad + simulador + studio + reporting para LPs  
-**Objetivo inmediato:** Fase 3 — Roles de usuario, formulario ingesta de métricas, tests por dominio  
+**Estado actual:** Fase 3 completa — auth JWT + roles, ingesta de métricas, 10 tests de integración pasando  
+**Objetivo inmediato:** Fase 4 — UI / dashboard, seed data extendida, CI  
 
 ---
 
@@ -35,7 +35,7 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 ```
 aida-venture-os/
 ├── app/
-│   ├── main.py              ✅ FastAPI entry point — 8 routers registrados (startups, market, valuation, fund, studio, fintech, deals+sourcing, reporting) — 50 rutas totales
+│   ├── main.py              ✅ FastAPI entry point — 9 routers registrados (auth, startups, market, valuation, fund, studio, fintech, deals+sourcing, reporting) — 57 rutas totales
 │   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
 │   ├── models/
 │   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
@@ -49,7 +49,8 @@ aida-venture-os/
 │   │   ├── dealflow.py      ✅ deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos
 │   │   └── reporting.py     ✅ lp_profiles, reports, narrative_blocks, ic_decisions
 │   ├── schemas/
-│   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
+│   │   ├── auth.py          ✅ UserCreate, UserRead, Token, LoginRequest
+│   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead, MetricIngestionForm, MetricIngestionResult
 │   │   ├── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
 │   │   ├── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult, ValuationDriverRead, OutlierFlagRead
 │   │   ├── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, FundScenarioRead, ScenarioInput, ScenarioResult
@@ -58,7 +59,8 @@ aida-venture-os/
 │   │   ├── dealflow.py      ✅ SourcingChannelRead, DealOpportunityRead, DealOpportunityWithStartup, ThesisAlignmentRead, DDChecklistRead, ICMemoRead, DealSummary, DealDetailRead
 │   │   └── reporting.py     ✅ LPProfileRead, ReportRead, NarrativeBlockRead, ICDecisionRead, LPReportSummary, PortfolioSnapshotItem
 │   ├── routers/
-│   │   ├── startups.py      ✅ 5 endpoints — lista, detalle, métricas, percentil, latest
+│   │   ├── auth.py          ✅ 6 endpoints — register (bootstrap), register/admin (GP), login, me, users, deactivate
+│   │   ├── startups.py      ✅ 6 endpoints — lista, detalle, métricas, percentil, latest, ingest-metrics
 │   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
 │   │   ├── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
 │   │   ├── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, simulate/quick
@@ -67,11 +69,12 @@ aida-venture-os/
 │   │   ├── dealflow.py      ✅ 8 endpoints — /deals (lista, summary, detail, thesis, checklist, memos) + /sourcing (channels, channel/deals)
 │   │   └── reporting.py     ✅ 4 endpoints — lp-summary, portfolio-snapshot, ic-decisions, pipeline-status
 │   └── services/
+│       ├── auth.py          ✅ hash_password, verify_password, create_access_token, decode_token, get_current_user, require_gp/analyst/studio_operator
 │       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
 │       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct, persist MultipleAnalysis
 │       ├── simulator.py     ✅ run_monte_carlo — N iteraciones vectorizadas con numpy, persiste FundScenario + FundMetrics
 │       ├── alpha.py         ✅ get_studio_summary, get_company_timeline, calculate_alpha_score
-│       └── importer.py      ⬜ PENDIENTE — Importación de Excels a DB
+│       └── importer.py      ✅ ingest_metrics — ingesta mensual, upsert por startup+métrica+período, warnings automáticos
 ├── alembic/                 ✅ Migraciones configuradas — 43 tablas en producción
 ├── data/
 │   ├── seed_data.py         ✅ 5 startups portafolio + fondo (147 registros)
@@ -79,8 +82,13 @@ aida-venture-os/
 │   ├── load_seed.py         ✅ Cargador unificado idempotente — 255 registros
 │   ├── load_benchmarks.py   ✅ Benchmarks desde Excels — 54 segmentos + 119 benchmarks
 │   ├── load_seed_extended.py ✅ Seed extendida Fase 2 — 75 registros adicionales
+│   ├── create_admin.py      ✅ Bootstrap usuario GP: admin@aidaventures.co / AidaVC2025!
 │   └── *.xlsx               ✅ 5 archivos de benchmarks externos
-├── tests/                   ⬜ PENDIENTE — carpeta vacía
+├── tests/
+│   ├── conftest.py          ✅ TestClient fixture + auth_headers fixture (usa admin GP)
+│   ├── test_startups.py     ✅ 5 tests — list, by name, ARR latest, percentile, ingest-metrics
+│   ├── test_fund.py         ✅ 3 tests — fund exists, quick simulate MOIC, high vs low pct_winners
+│   └── test_reports.py      ✅ 2 tests — lp-summary fields, portfolio snapshot ≥5 items
 ├── .env                     ✅ Credenciales locales (no en GitHub)
 ├── .env.example             ✅ Template público
 ├── requirements.txt         ✅
@@ -192,6 +200,13 @@ aida-venture-os/
 | GET | `/startups/{id}` | Detalle de startup por UUID |
 | GET | `/startups/{startup_name}/metrics` | Métricas históricas por nombre, metric_name como dropdown |
 | GET | `/startups/{startup_name}/metrics/latest` | Último snapshot por métrica, por nombre de startup |
+| POST | `/startups/ingest-metrics` | Ingesta mensual de métricas — require_analyst |
+| POST | `/auth/register` | Bootstrap primer usuario (solo si DB vacía) |
+| POST | `/auth/register/admin` | Registrar usuario nuevo — require_gp |
+| POST | `/auth/login` | Login → JWT token |
+| GET | `/auth/me` | Usuario actual autenticado |
+| GET | `/auth/users` | Lista usuarios — require_gp |
+| PUT | `/auth/users/{user_id}/deactivate` | Desactivar usuario — require_gp |
 | GET | `/startups/{startup_name}/percentile` | Percentil vs benchmark — usa sector/stage/geography en lugar de UUID |
 | GET | `/market/segments` | Segmentos de mercado con filtros |
 | GET | `/market/benchmarks` | Benchmarks — sector+stage+geography resuelven segmento automáticamente |
@@ -266,10 +281,19 @@ aida-venture-os/
 - [x] Deal Flow & Sourcing — pipeline completo con thesis scoring, DD progress por categoría, IC memos, 8 endpoints, 46 rutas totales
 - [x] Reporting básico — generate_lp_report, portfolio snapshot, ic-decisions, pipeline-status, 4 endpoints, 50 rutas totales
 
-### Fase 3 — Demo completo ← ESTAMOS AQUÍ
-- [ ] Sistema de roles (gp / analyst / studio_operator / viewer)
-- [ ] Formulario de ingesta de métricas para startups
-- [ ] Tests por dominio
+### Fase 3 — Demo completo ✅ COMPLETA
+- [x] Sistema de autenticación JWT con roles (gp / analyst / studio_operator / viewer)
+  - Endpoints protegidos: POST /valuation/analyze, POST /fund/simulate, GET /reports/lp-summary
+  - Bootstrap: data/create_admin.py — crea admin@aidaventures.co / AidaVC2025!
+  - bcrypt 4.0.1 requerido (passlib 1.7.4 incompatible con bcrypt 5.x)
+- [x] Formulario de ingesta de métricas — POST /startups/ingest-metrics (require_analyst)
+  - Upsert por startup+métrica+period_date, warnings automáticos de burn/runway/NRR
+- [x] Tests de integración — 10 tests pasando (pytest tests/ -v)
+
+### Fase 4 — Próximos pasos
+- [ ] UI / dashboard (Streamlit o Next.js)
+- [ ] CI/CD (GitHub Actions)
+- [ ] Seed data extendida para reporting
 
 ---
 
