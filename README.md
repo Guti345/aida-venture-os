@@ -349,6 +349,52 @@ Disponible en:
 
 ---
 
+## Frontend
+
+El frontend está construido con **Next.js 14** y vive en la carpeta `frontend/`.
+
+### Correr en modo desarrollo
+
+```bash
+cd frontend
+npm install       # solo la primera vez
+npm run dev       # abre http://localhost:3000
+```
+
+### Build de producción
+
+```bash
+cd frontend
+npm run build
+npm run start
+```
+
+### Variables de entorno (opcional)
+
+Crea `frontend/.env.local` para conectar contra la API local:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_DEMO_TOKEN=<tu_jwt_token>
+```
+
+Sin estas variables el frontend usa **mock data** como fallback automático.
+
+### Secciones disponibles
+
+| Ruta | Sección |
+|---|---|
+| `/` | Dashboard — KPIs ejecutivos, portafolio, studio, pipeline |
+| `/portfolio` | Lista de startups con filtros |
+| `/portfolio/[name]` | Detalle de startup — ARR histórico, percentil |
+| `/fund` | Fund Simulator — Monte Carlo MOIC/IRR |
+| `/studio` | Venture Studio — alpha metrics, build cost |
+| `/deals` | Deal Pipeline — sourcing, thesis scores |
+| `/market` | Benchmarks de mercado por segmento |
+| `/reports` | LP Report — snapshot del portafolio |
+
+---
+
 *Última actualización: Abril 2026 — AIDA Ventures*
-*Estado: Fase 1 completa — Fase 2 en curso*
+*Estado: Fase 3 completa — Frontend Next.js operativo*
 *Base de datos: 43 tablas creadas — 503 registros simulados cargados*

@@ -10,8 +10,8 @@ Contiene todo el contexto necesario para continuar el desarrollo sin repetir ins
 **Nombre:** AIDA Venture OS  
 **Descripción:** Sistema operativo de decisión para venture capital y venture studio.  
 **Empresa:** AIDA Ventures + Scale Radical  
-**Estado actual:** Fase 3 completa — auth JWT + roles, ingesta de métricas, 10 tests de integración pasando  
-**Objetivo inmediato:** Fase 4 — UI / dashboard, seed data extendida, CI  
+**Estado actual:** Fase 4 completa — frontend Next.js operativo con 7 secciones, mock data con fallback a API real  
+**Objetivo inmediato:** CI/CD (GitHub Actions), seed data extendida para reporting, autenticación real en UI  
 
 ---
 
@@ -315,6 +315,76 @@ alembic upgrade head
 # Revertir última migración
 alembic downgrade -1
 ```
+
+---
+
+## Frontend — Next.js 14
+
+Ubicación: `frontend/` (dentro del repositorio raíz)
+
+### Stack frontend
+
+| Componente | Tecnología |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| UI | React 18 + Tailwind CSS v3 |
+| Charts | Recharts |
+| Icons | lucide-react |
+| Clases condicionales | clsx |
+
+### Paleta de colores
+
+| Variable | Hex | Uso |
+|---|---|---|
+| `--navy` | `#0B1628` | Sidebar, fondo principal |
+| `--accent` | `#1A6FE8` | CTAs, highlights, badges |
+| `--success` | `#22C55E` | Métricas positivas |
+| `--warning` | `#F5A623` | Alertas, burn alto |
+| `--danger` | `#EF4444` | Métricas negativas |
+| `--secondary` | `#9CA3AF` | Textos secundarios, bordes |
+
+### Estructura frontend
+
+```
+frontend/
+├── app/
+│   ├── layout.tsx              ✅ Root layout — sidebar + topbar
+│   ├── page.tsx                ✅ Dashboard — 4 KPIs, tabla portafolio, studio donut, deals bar
+│   ├── portfolio/page.tsx      ✅ Lista startups con filtros (sector, stage, país, nombre)
+│   ├── portfolio/[name]/       ✅ Detalle startup — ARR histórico, percentil vs mercado
+│   ├── fund/page.tsx           ✅ Simulador Monte Carlo — sliders, P25/P50/P75 MOIC+IRR
+│   ├── studio/page.tsx         ✅ Venture Studio — donut por fase, alpha metrics
+│   ├── deals/page.tsx          ✅ Pipeline — tabla con thesis scores, canales sourcing
+│   ├── market/page.tsx         ✅ Benchmarks por segmento — bar chart + tabla
+│   └── reports/page.tsx        ✅ LP Report — resumen narrativo + portfolio snapshot
+├── components/
+│   ├── layout/                 ✅ Sidebar (navy, colapsable), Topbar, PageWrapper
+│   ├── ui/                     ✅ Card, KPICard, Badge, Table, SectionTitle, EmptyState
+│   └── charts/                 ✅ BarChart, LineChart, DonutChart (Recharts wrappers)
+├── lib/
+│   ├── api.ts                  ✅ Cliente HTTP — intenta API real, fallback a mock
+│   ├── types.ts                ✅ Interfaces TypeScript alineadas con backend schemas
+│   └── mock/                   ✅ portfolio.ts, fund.ts, studio.ts, deals.ts, reports.ts
+└── public/
+    └── logo.png                ✅ Logo monocromático del proyecto
+```
+
+### Comandos frontend
+
+```bash
+cd frontend
+npm run dev      # desarrollo — http://localhost:3000
+npm run build    # build de producción (verifica TypeScript)
+npm start        # sirve el build
+```
+
+### Convenciones frontend
+
+- Todos los componentes usan `'use client'` — proyecto demo, no optimizado para SSR
+- `lib/api.ts` — cada función intenta la API real, en caso de error retorna mock data
+- Variables de entorno: `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000`), `NEXT_PUBLIC_DEMO_TOKEN`
+- Recharts requiere `'use client'` — ya está en todos los componentes de charts
+- Paleta: usar siempre las variables CSS o las clases Tailwind extendidas (`text-accent`, `bg-navy`, etc.)
 
 ---
 
