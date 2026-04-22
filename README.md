@@ -20,9 +20,10 @@ Responde tres preguntas fundamentales en todo momento:
 
 ## Estado actual del proyecto
 
-> **Fase 1 completada — Fase 2 en curso**
-> Backend operativo con 43 tablas en PostgreSQL y 503 registros simulados cargados.
-> Motor de comparabilidad operativo con percentiles reales. Construyendo Valuation Intel y Fund Simulator.
+> **Fase 4 completa — frontend Next.js operativo**
+> Backend con 43 tablas en PostgreSQL, 503 registros simulados, 57 rutas REST, autenticación JWT con roles y 10 tests de integración.
+> Frontend Next.js con 7 secciones operativas, mock data con fallback a API real.
+> **Objetivo inmediato:** CI/CD (GitHub Actions), seed data extendida para reporting, autenticación real en UI.
 
 ### Decisiones de arquitectura confirmadas
 
@@ -33,13 +34,13 @@ Responde tres preguntas fundamentales en todo momento:
 | ¿Frecuencia de reporte? | Por definir. Sistema preparado para ingesta via formulario o Excel |
 | ¿Multi-tenant o single-tenant? | Single-tenant — uso exclusivo de AIDA Ventures |
 | ¿Usuarios del sistema? | GPs, analistas del fondo, operadores del venture studio |
-| ¿Objetivo inmediato? | Demo funcional para recolección de datos, BI y reportes para LPs |
+| ¿Objetivo inmediato? | CI/CD, seed data extendida para reporting, autenticación real en UI |
 
 ---
 
 ## Datos simulados — fase de desarrollo
 
-El sistema opera con **255 registros simulados** en base de datos:
+El sistema opera con **503 registros simulados** en base de datos:
 
 ### Portafolio externo (5 startups)
 
@@ -66,31 +67,18 @@ El sistema opera con **255 registros simulados** en base de datos:
 
 ### Registros en base de datos
 
-| Tabla | Registros |
-|---|---|
-| currencies | 5 |
-| tags | 14 |
-| startups | 10 |
-| founders | 20 |
-| startup_founders | 20 |
-| funding_rounds | 9 |
-| metric_snapshots | 138 |
-| market_segments | 54 |
-| benchmark_entries | 119 |
-| valuation_events | 9 |
-| funds | 1 |
-| investments | 9 |
-| studio_companies | 7 |
-| build_costs | 16 |
-| studio_milestones | 19 |
-| alpha_metrics | 6 |
-| fintech_subverticals | 6 |
-| sourcing_channels | 6 |
-| deal_opportunities | 8 |
-| thesis_alignments | 10 |
-| dd_checklists | 14 |
-| ic_memos | 3 |
-| **Total** | **503** |
+| Dominio | Tablas | Registros |
+|---|---|---|
+| Transversales | users, currencies, tags, audit_logs | 19 |
+| Startup Engine | startups, founders, startup_founders, funding_rounds, metric_snapshots | 197 |
+| Market Reality | market_segments, benchmark_entries, benchmark_series, valuation_distributions | 173 |
+| Valuation Intel | valuation_events, multiple_analyses, valuation_drivers, outlier_flags | 9 |
+| Fund Simulator | funds, lps, investments, fund_scenarios, fund_metrics | 10 |
+| Studio Performance | studio_companies, build_costs, studio_milestones, alpha_metrics | 48 |
+| Fintech Deep Dive | fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables | 6 |
+| Deal Flow | deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos | 41 |
+| Reporting | lp_profiles, reports, narrative_blocks, ic_decisions | 0 |
+| **Total** | | **503** |
 
 ### Plan de transición datos simulados → datos reales
 
@@ -125,7 +113,9 @@ Fase automatizada   → Integración directa con fuentes (contabilidad, CRM, ban
 | Validación | Pydantic | v2 |
 | Procesamiento | Pandas + NumPy + SciPy | Latest |
 | Entorno | virtualenv (venv) | — |
-| Control de versiones | Git + GitHub Desktop | — |
+| Frontend | Next.js 14 + React 18 + Tailwind CSS v3 | — |
+| Charts | Recharts | — |
+| Control de versiones | Git + GitHub | — |
 
 ---
 
@@ -133,77 +123,102 @@ Fase automatizada   → Integración directa con fuentes (contabilidad, CRM, ban
 
 ```
 aida-venture-os/
-│
 ├── app/
-│   ├── main.py                  ✅ FastAPI entry point — / y /health operativos
-│   ├── database.py              ✅ Conexión PostgreSQL con SQLAlchemy
-│   │
-│   ├── models/                  ✅ 43 tablas en 8 dominios — COMPLETO
-│   │   ├── __init__.py          ✅ Importaciones ordenadas por grafo FK
-│   │   ├── shared.py            ✅ users, currencies, tags, audit_logs
-│   │   ├── market.py            ✅ market_segments, benchmark_entries, benchmark_series, valuation_distributions
-│   │   ├── startup.py           ✅ startups, founders, startup_founders, funding_rounds, metric_snapshots
-│   │   ├── valuation.py         ✅ valuation_events, multiple_analyses, valuation_drivers, outlier_flags
-│   │   ├── fund.py              ✅ funds, lps, investments, fund_scenarios, fund_metrics
-│   │   ├── studio.py            ✅ studio_companies, build_costs, studio_milestones, alpha_metrics
-│   │   ├── fintech.py           ✅ fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables
-│   │   ├── dealflow.py          ✅ deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos
-│   │   └── reporting.py         ✅ lp_profiles, reports, narrative_blocks, ic_decisions
-│   │
-│   ├── schemas/                 ✅ Pydantic v2 schemas — startup.py + market.py
-│   │   ├── startup.py           ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead
-│   │   └── market.py            ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
-│   ├── routers/                 ✅ Endpoints REST operativos — 2 routers activos
-│   │   ├── startups.py          ✅ 5 endpoints — lista, detalle, métricas, percentil, métricas latest
-│   │   └── market.py            ✅ 2 endpoints — segmentos y benchmarks con filtros
-│   └── services/                🔄 En construcción — lógica de negocio
-│       ├── percentile.py        ✅ Cálculo de percentiles vs benchmarks con interpolación lineal
-│       ├── simulator.py         ⬜ Monte Carlo MOIC/IRR
-│       ├── alpha.py             ⬜ Studio alpha vs mercado
-│       └── importer.py          ⬜ Importación de Excels a DB
-│
-├── alembic/                     ✅ Migraciones configuradas
-│   ├── env.py                   ✅ Conectado a .env y Base
-│   ├── script.py.mako           ✅
-│   └── versions/
-│       └── 8261c3862e5b_*.py    ✅ Migración inicial — 43 tablas creadas
-│
-├── data/                        ✅ Datos semilla cargados en DB
-│   ├── seed_data.py             ✅ 5 startups portafolio + fondo (147 registros)
-│   ├── studio_seed_data.py      ✅ 5 empresas venture studio (95 registros)
-│   ├── load_seed.py             ✅ Cargador unificado idempotente — 255 registros insertados
-│   ├── load_benchmarks.py       ✅ Benchmarks desde Excels — 54 segmentos + 119 benchmarks
-│   ├── load_seed_extended.py    ✅ Seed extendida Fase 2 — 75 registros adicionales
-│   ├── VCFunds_Metrics.xlsx     ✅
-│   ├── Venture_Studio_Metrics_Reference.xlsx ✅
-│   ├── _AIDA_Ventures_-_Startups_Benchmarks.xlsx ✅
-│   ├── _Metricas_Startups.xlsx  ✅
-│   └── Fintech_Sectors.xlsx     ✅
-│
-├── tests/                       ⬜ Pendiente
-├── .env                         ✅ Configurado — NO subir a GitHub
-├── .env.example                 ✅
-├── requirements.txt             ✅
-├── alembic.ini                  ✅
-├── CLAUDE.md                    ✅ Memoria persistente para Claude Code
-└── README.md                    ✅ Este archivo
+│   ├── main.py              ✅ FastAPI entry point — 9 routers, 57 rutas totales
+│   ├── database.py          ✅ Conexión PostgreSQL con SQLAlchemy
+│   ├── models/
+│   │   ├── __init__.py      ✅ Importaciones ordenadas por grafo FK
+│   │   ├── shared.py        ✅ users, currencies, tags, audit_logs
+│   │   ├── startup.py       ✅ startups, founders, startup_founders, funding_rounds, metric_snapshots
+│   │   ├── market.py        ✅ market_segments, benchmark_entries, benchmark_series, valuation_distributions
+│   │   ├── valuation.py     ✅ valuation_events, multiple_analyses, valuation_drivers, outlier_flags
+│   │   ├── fund.py          ✅ funds, lps, investments, fund_scenarios, fund_metrics
+│   │   ├── studio.py        ✅ studio_companies, build_costs, studio_milestones, alpha_metrics
+│   │   ├── fintech.py       ✅ fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables
+│   │   ├── dealflow.py      ✅ deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos
+│   │   └── reporting.py     ✅ lp_profiles, reports, narrative_blocks, ic_decisions
+│   ├── schemas/
+│   │   ├── auth.py          ✅ UserCreate, UserRead, Token, LoginRequest
+│   │   ├── startup.py       ✅ StartupList, StartupRead, StartupWithMetrics, MetricSnapshotRead, MetricIngestionForm
+│   │   ├── market.py        ✅ MarketSegmentRead, BenchmarkEntryRead, PercentileResult
+│   │   ├── valuation.py     ✅ ValuationEventRead, MultipleAnalysisRead, ValuationAnalysisResult
+│   │   ├── fund.py          ✅ FundRead, InvestmentRead, FundMetricsRead, ScenarioInput, ScenarioResult
+│   │   ├── studio.py        ✅ StudioCompanyRead, BuildCostRead, StudioSummary, TimelineEvent
+│   │   ├── fintech.py       ✅ FintechSubverticalRead, FintechMarketOverview, RegulatoryRiskRead
+│   │   ├── dealflow.py      ✅ DealOpportunityRead, ThesisAlignmentRead, DDChecklistRead, ICMemoRead
+│   │   └── reporting.py     ✅ LPProfileRead, ReportRead, LPReportSummary, PortfolioSnapshotItem
+│   ├── routers/
+│   │   ├── auth.py          ✅ 6 endpoints — register, login, me, users, deactivate
+│   │   ├── startups.py      ✅ 6 endpoints — lista, detalle, métricas, percentil, latest, ingest-metrics
+│   │   ├── market.py        ✅ 2 endpoints — segmentos y benchmarks con filtros
+│   │   ├── valuation.py     ✅ 5 endpoints — events, event detail, analyze, drivers, outliers
+│   │   ├── fund.py          ✅ 6 endpoints — fondo, inversiones, metrics, scenarios, simulate, quick
+│   │   ├── studio.py        ✅ 8 endpoints — summary, companies, detail, timeline, costs, milestones, alpha
+│   │   ├── fintech.py       ✅ 6 endpoints — subverticals, overview, unit-economics, comparables, regulatory-risks
+│   │   ├── dealflow.py      ✅ 8 endpoints — deals + sourcing channels
+│   │   └── reporting.py     ✅ 4 endpoints — lp-summary, portfolio-snapshot, ic-decisions, pipeline-status
+│   └── services/
+│       ├── auth.py          ✅ JWT, hash_password, roles (gp/analyst/studio_operator/viewer)
+│       ├── percentile.py    ✅ Cálculo de percentiles con interpolación lineal
+│       ├── valuation.py     ✅ analyze_valuation — múltiplo vs benchmark, verdict, premium_pct
+│       ├── simulator.py     ✅ run_monte_carlo — N iteraciones vectorizadas con numpy
+│       ├── alpha.py         ✅ get_studio_summary, get_company_timeline, calculate_alpha_score
+│       └── importer.py      ✅ ingest_metrics — upsert por startup+métrica+período, warnings automáticos
+├── alembic/                 ✅ Migraciones configuradas — 43 tablas en producción
+├── data/
+│   ├── seed_data.py         ✅ 5 startups portafolio + fondo (147 registros)
+│   ├── studio_seed_data.py  ✅ 5 empresas venture studio (95 registros)
+│   ├── load_seed.py         ✅ Cargador unificado idempotente — 255 registros
+│   ├── load_benchmarks.py   ✅ Benchmarks desde Excels — 54 segmentos + 119 benchmarks
+│   ├── load_seed_extended.py ✅ Seed extendida — 75 registros adicionales
+│   ├── create_admin.py      ✅ Bootstrap GP: admin@aidaventures.co / AidaVC2025!
+│   └── *.xlsx               ✅ 5 archivos de benchmarks externos
+├── tests/
+│   ├── conftest.py          ✅ TestClient + auth_headers fixtures
+│   ├── test_startups.py     ✅ 5 tests — list, by name, ARR latest, percentile, ingest-metrics
+│   ├── test_fund.py         ✅ 3 tests — fund exists, quick simulate MOIC, scenarios
+│   └── test_reports.py      ✅ 2 tests — lp-summary fields, portfolio snapshot
+├── frontend/
+│   ├── app/
+│   │   ├── layout.tsx              ✅ Root layout — sidebar + topbar
+│   │   ├── page.tsx                ✅ Dashboard — 4 KPIs, tabla portafolio, studio donut, deals bar
+│   │   ├── portfolio/page.tsx      ✅ Lista startups con filtros (sector, stage, país, nombre)
+│   │   ├── portfolio/[name]/       ✅ Detalle startup — ARR histórico, percentil vs mercado
+│   │   ├── fund/page.tsx           ✅ Simulador Monte Carlo — sliders, P25/P50/P75 MOIC+IRR
+│   │   ├── studio/page.tsx         ✅ Venture Studio — donut por fase, alpha metrics
+│   │   ├── deals/page.tsx          ✅ Pipeline — tabla con thesis scores, canales sourcing
+│   │   ├── market/page.tsx         ✅ Benchmarks por segmento — bar chart + tabla
+│   │   └── reports/page.tsx        ✅ LP Report — resumen narrativo + portfolio snapshot
+│   ├── components/
+│   │   ├── layout/                 ✅ Sidebar (navy, colapsable), Topbar, PageWrapper
+│   │   ├── ui/                     ✅ Card, KPICard, Badge, Table, SectionTitle, EmptyState
+│   │   └── charts/                 ✅ BarChart, LineChart, DonutChart (Recharts wrappers)
+│   └── lib/
+│       ├── api.ts                  ✅ Cliente HTTP — intenta API real, fallback a mock
+│       ├── types.ts                ✅ Interfaces TypeScript alineadas con backend schemas
+│       └── mock/                   ✅ portfolio.ts, fund.ts, studio.ts, deals.ts, reports.ts
+├── .env                     ✅ Credenciales locales — NO subir a GitHub
+├── .env.example             ✅ Template público
+├── requirements.txt         ✅
+├── CLAUDE.md                ✅ Memoria persistente para Claude Code
+└── README.md                ✅ Este archivo
 ```
 
 ---
 
 ## Base de datos — 43 tablas en 8 dominios
 
-| Dominio | Tablas | Modelo | Migración | Seed data |
+| Dominio | Tablas | Modelo | Seed data | Registros |
 |---|---|---|---|---|
-| Transversales | users, currencies, tags, audit_logs | ✅ | ✅ | ⬜ |
-| Startup Engine | startups, founders, startup_founders, funding_rounds, metric_snapshots | ✅ | ✅ | ✅ |
-| Market Reality | market_segments, benchmark_entries, benchmark_series, valuation_distributions | ✅ | ✅ | ⬜ |
-| Valuation Intel | valuation_events, multiple_analyses, valuation_drivers, outlier_flags | ✅ | ✅ | ⬜ |
-| Fund Simulator | funds, lps, investments, fund_scenarios, fund_metrics | ✅ | ✅ | ✅ |
-| Studio Performance | studio_companies, build_costs, studio_milestones, alpha_metrics | ✅ | ✅ | ✅ |
-| Fintech Deep Dive | fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables | ✅ | ✅ | ⬜ |
-| Deal Flow | deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos | ✅ | ✅ | ⬜ |
-| Reporting | lp_profiles, reports, narrative_blocks, ic_decisions | ✅ | ✅ | ⬜ |
+| Transversales | users, currencies, tags, audit_logs | ✅ | 🔄 parcial | 19 |
+| Startup Engine | startups, founders, startup_founders, funding_rounds, metric_snapshots | ✅ | ✅ | 197 |
+| Market Reality | market_segments, benchmark_entries, benchmark_series, valuation_distributions | ✅ | ✅ | 173 |
+| Valuation Intel | valuation_events, multiple_analyses, valuation_drivers, outlier_flags | ✅ | 🔄 parcial | 9 |
+| Fund Simulator | funds, lps, investments, fund_scenarios, fund_metrics | ✅ | 🔄 parcial | 10 |
+| Studio Performance | studio_companies, build_costs, studio_milestones, alpha_metrics | ✅ | ✅ | 48 |
+| Fintech Deep Dive | fintech_subverticals, fintech_unit_economics, regulatory_risks, fintech_comparables | ✅ | 🔄 parcial | 6 |
+| Deal Flow | deal_opportunities, thesis_alignments, sourcing_channels, dd_checklists, ic_memos | ✅ | ✅ | 41 |
+| Reporting | lp_profiles, reports, narrative_blocks, ic_decisions | ✅ | ⬜ | 0 |
 
 ---
 
@@ -223,6 +238,8 @@ El archivo `.env` está en `.gitignore` — nunca se sube a GitHub.
 
 ## Cómo correr el proyecto
 
+### Backend
+
 ```bash
 # 1. Activar entorno virtual
 .\venv\Scripts\activate
@@ -235,15 +252,43 @@ alembic upgrade head
 
 # 4. Cargar datos simulados
 python data/load_seed.py
+python data/load_benchmarks.py
+python data/load_seed_extended.py
 
-# 5. Iniciar el servidor
+# 5. Crear usuario administrador
+python data/create_admin.py
+
+# 6. Iniciar el servidor
 uvicorn app.main:app --reload
 ```
 
-Disponible en:
-- `http://localhost:8000` — API
-- `http://localhost:8000/docs` — Swagger UI
+Backend disponible en:
+- `http://localhost:8000` — API REST
+- `http://localhost:8000/docs` — Swagger UI interactivo
 - `http://localhost:8000/redoc` — ReDoc
+
+### Frontend
+
+```bash
+cd frontend
+npm install       # solo la primera vez
+npm run dev       # abre http://localhost:3000
+```
+
+Crea `frontend/.env.local` para conectar contra la API local:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_DEMO_TOKEN=<tu_jwt_token>
+```
+
+Sin estas variables el frontend usa **mock data** como fallback automático.
+
+### Tests
+
+```bash
+pytest tests/ -v   # 10 tests de integración
+```
 
 ---
 
@@ -253,44 +298,41 @@ Disponible en:
 - [x] Entorno Python configurado (venv, dependencias)
 - [x] PostgreSQL local con DB `aida_venture_os`
 - [x] Repositorio GitHub configurado
-- [x] Estructura de carpetas completa
-- [x] `app/database.py` — conexión SQLAlchemy
-- [x] `app/main.py` — FastAPI con / y /health operativos
 - [x] 9 archivos de modelos SQLAlchemy — 43 tablas
-- [x] `alembic.ini` + `env.py` configurados
-- [x] Migración inicial — 43 tablas creadas en PostgreSQL
+- [x] Alembic configurado — migración inicial aplicada
 - [x] `data/load_seed.py` — 255 registros simulados cargados
-- [x] `CLAUDE.md` — memoria persistente para Claude Code
 
 ### Fase 1 — Motor de comparabilidad ✅ COMPLETA
-- [x] Schemas Pydantic — `app/schemas/startup.py` y `app/schemas/market.py`
-- [x] Router startups — `app/routers/startups.py` con CRUD y métricas
-- [x] Router market — `app/routers/market.py` con benchmarks y segmentos
-- [x] Servicio `app/services/percentile.py` — startup X en percentil Y vs benchmark
-- [x] Importador de Excels — cargar benchmarks desde los 5 archivos .xlsx
-- [x] Benchmarks seed cargados en `market_segments` y `benchmark_entries`
-- [x] Registrar routers en `app/main.py`
-- [x] Seed extendida — `data/load_seed_extended.py` — currencies, tags, fintech_subverticals, sourcing_channels, deals, ic_memos, valuation_events
+- [x] Schemas Pydantic — `startup.py` y `market.py`
+- [x] Router startups — lista, detalle, métricas, percentil, latest
+- [x] Router market — benchmarks y segmentos con filtros
+- [x] `services/percentile.py` — cálculo percentil con interpolación lineal
+- [x] `data/load_benchmarks.py` — 54 segmentos + 119 benchmarks desde Excels
+- [x] `data/load_seed_extended.py` — currencies, tags, fintech_subverticals, sourcing_channels, deals, ic_memos, valuation_events
 
-### Fase 2 — Simulador y studio ← ESTAMOS AQUÍ
-- [ ] Valuation Intelligence — schemas + router + cálculo de múltiplos vs mercado
-- [ ] Fund Simulator — Monte Carlo MOIC/IRR con fondo parametrizable
-- [ ] Studio Performance — alpha vs mercado (router + endpoints)
-- [ ] Fintech Deep Dive — unit economics y comparables por subvertical
-- [ ] Deal Flow — router + endpoints para pipeline de deals
-- [ ] LPs y reporting básico
+### Fase 2 — Simulador y Studio ✅ COMPLETA
+- [x] Valuation Intelligence — schemas + service analyze_valuation + router 5 endpoints
+- [x] Fund Simulator — Monte Carlo MOIC/IRR vectorizado con numpy, 6 endpoints
+- [x] Studio Performance — summary, timeline, alpha score, 8 endpoints
+- [x] Fintech Deep Dive — unit economics, comparables, regulatory-risks, 6 endpoints
+- [x] Deal Flow & Sourcing — pipeline con thesis scoring, DD progress, IC memos, 8 endpoints
+- [x] Reporting básico — lp-summary, portfolio snapshot, ic-decisions, pipeline-status, 4 endpoints
 
-### Fase 3 — Demo completo (semanas 9–10)
-- [ ] Deal Flow & Sourcing — pipeline completo
-- [ ] Reporting — generador de LP reports
-- [ ] Sistema de roles (gp / analyst / studio_operator / viewer)
-- [ ] Formulario de ingesta de métricas para startups
-- [ ] Tests por dominio
+### Fase 3 — Demo completo ✅ COMPLETA
+- [x] Sistema de autenticación JWT con roles (gp / analyst / studio_operator / viewer)
+- [x] Bootstrap: `data/create_admin.py` — `admin@aidaventures.co` / `AidaVC2025!`
+- [x] Formulario de ingesta de métricas — `POST /startups/ingest-metrics` (require_analyst)
+- [x] Tests de integración — 10 tests pasando (`pytest tests/ -v`)
 
-### Fase 4 — Transición a datos reales (post-demo)
-- [ ] Reemplazar seed data por datos reales del fondo
-- [ ] Proceso de reporte periódico con startups reales
-- [ ] Onboarding de primeros LPs como viewers
+### Fase 4 — Frontend ✅ COMPLETA
+- [x] Next.js 14 con 7 secciones operativas
+- [x] Mock data con fallback automático a API real
+- [x] Sidebar colapsable, paleta institucional, Recharts
+
+### Próximos pasos
+- [ ] CI/CD (GitHub Actions)
+- [ ] Seed data extendida para dominio Reporting
+- [ ] Autenticación real en UI (login screen + JWT persistido)
 
 ---
 
@@ -299,23 +341,121 @@ Disponible en:
 ### Sistema
 | Método | Endpoint | Descripción |
 |---|---|---|
-| GET | `/` | Health check básico |
+| GET | `/` | Bienvenida |
 | GET | `/health` | Estado del servidor |
+
+### Auth (`/auth`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/auth/register` | Bootstrap primer usuario (solo si DB vacía) |
+| POST | `/auth/register/admin` | Registrar usuario — require_gp |
+| POST | `/auth/login` | Login → JWT token |
+| GET | `/auth/me` | Usuario autenticado actual |
+| GET | `/auth/users` | Lista usuarios — require_gp |
+| PUT | `/auth/users/{user_id}/deactivate` | Desactivar usuario — require_gp |
 
 ### Startups (`/startups`)
 | Método | Endpoint | Descripción |
 |---|---|---|
-| GET | `/startups` | Lista todas las startups — filtros: sector, stage, country, studio_built |
-| GET | `/startups/{id}` | Detalle de una startup |
-| GET | `/startups/{id}/metrics` | Métricas históricas — filtro: metric_name |
-| GET | `/startups/{id}/metrics/latest` | Último snapshot por cada métrica |
-| GET | `/startups/{id}/percentile` | Posición percentil vs benchmark — params: metric_name, segment_id |
+| GET | `/startups` | Lista con filtros: name, sector, stage, country, studio_built |
+| GET | `/startups/{id}` | Detalle de startup por UUID |
+| GET | `/startups/{name}/metrics` | Métricas históricas por nombre |
+| GET | `/startups/{name}/metrics/latest` | Último snapshot por métrica |
+| GET | `/startups/{name}/percentile` | Percentil vs benchmark |
+| POST | `/startups/ingest-metrics` | Ingesta mensual — require_analyst |
 
 ### Market (`/market`)
 | Método | Endpoint | Descripción |
 |---|---|---|
-| GET | `/market/segments` | Segmentos de mercado — filtros: sector, stage, geography, country |
-| GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 — filtros: segment_id, multiple_type, sector |
+| GET | `/market/segments` | Segmentos de mercado con filtros |
+| GET | `/market/benchmarks` | Benchmarks P25/P50/P75/P90 |
+
+### Valuation (`/valuation`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/valuation/events` | Lista valuation events |
+| GET | `/valuation/events/{event_id}` | Detalle con multiple_analyses |
+| POST | `/valuation/analyze` | Ejecuta análisis — require_analyst |
+| GET | `/valuation/drivers/{startup_id}` | Drivers de valoración |
+| GET | `/valuation/outliers` | Outlier flags |
+
+### Fund (`/fund`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/fund` | Datos del fondo activo |
+| GET | `/fund/investments` | Inversiones con nombre de startup |
+| GET | `/fund/metrics` | Métricas actuales (último FundMetric) |
+| GET | `/fund/scenarios` | Escenarios Monte Carlo guardados |
+| POST | `/fund/simulate` | Ejecuta Monte Carlo — require_gp |
+| GET | `/fund/simulate/quick` | Monte Carlo con preset (conservador/base/optimista) |
+
+### Studio (`/studio`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/studio/summary` | Resumen del portfolio del studio |
+| GET | `/studio/companies` | Lista empresas con startup_name y fase |
+| GET | `/studio/companies/{id}` | Detalle de empresa del studio |
+| GET | `/studio/companies/{name}/timeline` | Línea de tiempo cronológica |
+| GET | `/studio/companies/{name}/costs` | Breakdown de build_costs |
+| GET | `/studio/companies/{name}/milestones` | Hitos con estado achieved |
+| GET | `/studio/alpha` | Alpha metrics donde studio > mercado |
+| GET | `/studio/alpha/score/{id}` | Score de alpha 0–100 |
+
+### Fintech (`/fintech`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/fintech/subverticals` | Lista subverticales con filtros |
+| GET | `/fintech/subverticals/{id}` | Detalle con FintechSubverticalSummary |
+| GET | `/fintech/overview` | FintechMarketOverview |
+| GET | `/fintech/unit-economics` | Unit economics por startup/subvertical |
+| GET | `/fintech/comparables` | Comparables por subvertical/geography |
+| GET | `/fintech/regulatory-risks` | Riesgos regulatorios |
+
+### Deals (`/deals`) y Sourcing (`/sourcing`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/deals` | Lista deals con filtros |
+| GET | `/deals/summary` | Estadísticas del pipeline |
+| GET | `/deals/{deal_id}` | Deal completo con thesis, DD e IC memos |
+| GET | `/deals/{deal_id}/thesis` | Thesis alignments con score total |
+| GET | `/deals/{deal_id}/checklist` | DD checklist con progreso por categoría |
+| GET | `/deals/{deal_id}/memos` | IC memos ordenados por version desc |
+| GET | `/sourcing/channels` | Canales de sourcing activos |
+| GET | `/sourcing/channels/{channel_id}/deals` | Deals de un canal específico |
+
+### Reports (`/reports`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/reports/lp-summary` | Resumen ejecutivo LP — require_gp |
+| GET | `/reports/portfolio-snapshot` | Snapshot por startup — ARR, MRR, NRR, burn, runway |
+| GET | `/reports/ic-decisions` | Decisiones IC ordenadas por fecha |
+| GET | `/reports/pipeline-status` | Estado del pipeline con days_in_pipeline |
+
+---
+
+## Frontend — 7 secciones
+
+| Ruta | Sección |
+|---|---|
+| `/` | Dashboard — KPIs ejecutivos, portafolio, studio, pipeline |
+| `/portfolio` | Lista de startups con filtros |
+| `/portfolio/[name]` | Detalle de startup — ARR histórico, percentil |
+| `/fund` | Fund Simulator — Monte Carlo MOIC/IRR |
+| `/studio` | Venture Studio — alpha metrics, build cost |
+| `/deals` | Deal Pipeline — sourcing, thesis scores |
+| `/market` | Benchmarks de mercado por segmento |
+| `/reports` | LP Report — snapshot del portafolio |
+
+### Paleta de colores institucional
+
+| Variable | Hex | Uso |
+|---|---|---|
+| `--navy` | `#0B1628` | Sidebar, fondo principal |
+| `--accent` | `#1A6FE8` | CTAs, highlights, badges |
+| `--success` | `#22C55E` | Métricas positivas |
+| `--warning` | `#F5A623` | Alertas, burn alto |
+| `--danger` | `#EF4444` | Métricas negativas |
+| `--secondary` | `#9CA3AF` | Textos secundarios, bordes |
 
 ---
 
@@ -336,65 +476,18 @@ Disponible en:
 
 | Parámetro | Valor |
 |---|---|
-| Fondo | AIDA Ventures + Scale Radical |
+| Fondo | AIDA Ventures Fund I |
 | Etapas objetivo | Pre-Seed / Seed / Series A |
-| Geografía foco | Colombia, LATAM |
+| Geografía foco | Colombia (foco) + LATAM |
 | Sectores core | Fintech, SaaS, LogTech |
 | Venture Studio | Activo — el sistema mide alpha vs mercado |
 | Tamaño del fondo | Parámetro ajustable (default demo: $10M) |
 | Startups en portafolio real | 0 — sistema en modo demo con datos simulados |
 | Empresas studio reales | 0 — sistema en modo demo con datos simulados |
-| Usuarios del sistema | GPs y analistas internos + operadores del studio |
-| Objetivo inmediato | Demo funcional para BI y reportes LP |
-
----
-
-## Frontend
-
-El frontend está construido con **Next.js 14** y vive en la carpeta `frontend/`.
-
-### Correr en modo desarrollo
-
-```bash
-cd frontend
-npm install       # solo la primera vez
-npm run dev       # abre http://localhost:3000
-```
-
-### Build de producción
-
-```bash
-cd frontend
-npm run build
-npm run start
-```
-
-### Variables de entorno (opcional)
-
-Crea `frontend/.env.local` para conectar contra la API local:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_DEMO_TOKEN=<tu_jwt_token>
-```
-
-Sin estas variables el frontend usa **mock data** como fallback automático.
-
-### Secciones disponibles
-
-| Ruta | Sección |
-|---|---|
-| `/` | Dashboard — KPIs ejecutivos, portafolio, studio, pipeline |
-| `/portfolio` | Lista de startups con filtros |
-| `/portfolio/[name]` | Detalle de startup — ARR histórico, percentil |
-| `/fund` | Fund Simulator — Monte Carlo MOIC/IRR |
-| `/studio` | Venture Studio — alpha metrics, build cost |
-| `/deals` | Deal Pipeline — sourcing, thesis scores |
-| `/market` | Benchmarks de mercado por segmento |
-| `/reports` | LP Report — snapshot del portafolio |
+| Modo actual | Demo — datos 100% ficticios |
 
 ---
 
 *Última actualización: Abril 2026 — AIDA Ventures*
-*Estado: Fase 3 completa — Frontend Next.js operativo*
-*Base de datos: 43 tablas creadas — 503 registros simulados cargados*
+*Estado: Fase 4 completa — backend 57 rutas + frontend Next.js 7 secciones operativas*
+*Base de datos: 43 tablas — 503 registros simulados cargados*
