@@ -82,10 +82,12 @@ export const deals: DealOpportunity[] = [
   },
 ]
 
-export const dealsByStatus = {
-  screening: 3,
-  due_diligence: 2,
-  term_sheet: 1,
-  invested: 1,
+export const dealsByStatus: Record<string, number> = {
+  identified: 2,
+  screening: 1,
+  dd: 1,
+  ic: 1,
+  invested: 2,
   passed: 1,
+  watchlist: 0,
 }
