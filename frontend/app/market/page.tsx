@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import PageWrapper from '@/components/layout/PageWrapper'
 import Card from '@/components/ui/Card'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Table from '@/components/ui/Table'
 import BarChart from '@/components/charts/BarChart'
-import { getMarketSegments } from '@/lib/api'
 import type { MarketSegment } from '@/lib/types'
 
 const SECTORS = ['Fintech', 'LogTech', 'SaaS B2B', 'HealthTech', 'AgriTech', 'EdTech']
@@ -14,24 +13,23 @@ const SECTORS = ['Fintech', 'LogTech', 'SaaS B2B', 'HealthTech', 'AgriTech', 'Ed
 const fmtUSD = (v: number) =>
   v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` : `$${(v / 1_000).toFixed(0)}K`
 
+const allSegments: MarketSegment[] = [
+  { id: '1', sector: 'Fintech',    stage: 'Seed',      geography: 'Colombia', avg_arr_usd: 580000,  benchmark_count: 24 },
+  { id: '2', sector: 'Fintech',    stage: 'Series A',  geography: 'Colombia', avg_arr_usd: 4200000, benchmark_count: 12 },
+  { id: '3', sector: 'LogTech',    stage: 'Seed',      geography: 'LATAM',    avg_arr_usd: 420000,  benchmark_count: 18 },
+  { id: '4', sector: 'LogTech',    stage: 'Series A',  geography: 'LATAM',    avg_arr_usd: 2800000, benchmark_count: 9  },
+  { id: '5', sector: 'SaaS B2B',   stage: 'Pre-Seed',  geography: 'Colombia', avg_arr_usd: 85000,   benchmark_count: 31 },
+  { id: '6', sector: 'HealthTech', stage: 'Seed',      geography: 'Colombia', avg_arr_usd: 310000,  benchmark_count: 15 },
+  { id: '7', sector: 'AgriTech',   stage: 'Seed',      geography: 'Colombia', avg_arr_usd: 280000,  benchmark_count: 22 },
+  { id: '8', sector: 'EdTech',     stage: 'Pre-Seed',  geography: 'Colombia', avg_arr_usd: 65000,   benchmark_count: 19 },
+]
+
 export default function MarketPage() {
-  const [segments, setSegments] = useState<MarketSegment[]>([])
   const [sectorFilter, setSectorFilter] = useState('')
-  const [loading, setLoading] = useState(true)
 
-  const load = useCallback(() => {
-    setLoading(true)
-    getMarketSegments()
-      .then((all) => {
-        const filtered = sectorFilter
-          ? all.filter((s) => s.sector === sectorFilter)
-          : all
-        setSegments(filtered)
-      })
-      .finally(() => setLoading(false))
-  }, [sectorFilter])
-
-  useEffect(() => { load() }, [load])
+  const segments = sectorFilter
+    ? allSegments.filter((s) => s.sector === sectorFilter)
+    : allSegments
 
   const tableRows = segments.map((s) => [
     <span key="sector" className="font-medium">{s.sector}</span>,
@@ -53,7 +51,6 @@ export default function MarketPage() {
         subtitle="ARR promedio por segmento — fuente: datos de mercado LATAM"
       />
 
-      {/* Filter */}
       <Card padding="sm">
         <div className="flex items-center gap-3 px-2 py-1">
           <select
@@ -78,27 +75,17 @@ export default function MarketPage() {
         </div>
       </Card>
 
-      {/* Chart */}
       <Card>
         <SectionTitle title="ARR promedio por segmento" className="mb-4" />
-        {loading ? (
-          <div className="py-8 text-center text-sm text-[#9CA3AF]">Cargando...</div>
-        ) : (
-          <BarChart data={chartData} height={240} valueFormatter={fmtUSD} />
-        )}
+        <BarChart data={chartData} height={240} valueFormatter={fmtUSD} />
       </Card>
 
-      {/* Table */}
       <Card padding="sm">
         <SectionTitle title="Segmentos" className="mb-4 px-2" />
-        {loading ? (
-          <div className="py-8 text-center text-sm text-[#9CA3AF]">Cargando...</div>
-        ) : (
-          <Table
-            headers={['Sector', 'Etapa', 'Geografía', 'ARR promedio', 'Benchmarks']}
-            rows={tableRows}
-          />
-        )}
+        <Table
+          headers={['Sector', 'Etapa', 'Geografía', 'ARR promedio', 'Benchmarks']}
+          rows={tableRows}
+        />
       </Card>
     </PageWrapper>
   )

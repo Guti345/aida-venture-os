@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageWrapper from '@/components/layout/PageWrapper'
 import KPICard from '@/components/ui/KPICard'
@@ -10,8 +9,7 @@ import Table from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import BarChart from '@/components/charts/BarChart'
 import DonutChart from '@/components/charts/DonutChart'
-import type { Startup } from '@/lib/types'
-import { getStartups } from '@/lib/api'
+import { startups } from '@/lib/mock/portfolio'
 import * as mockStudio from '@/lib/mock/studio'
 import * as mockDeals from '@/lib/mock/deals'
 
@@ -29,11 +27,6 @@ const studioDonutData = Object.entries(mockStudio.summary.companies_by_phase).ma
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [startups, setStartups] = useState<Startup[]>([])
-
-  useEffect(() => {
-    getStartups().then(setStartups)
-  }, [])
 
   const tableRows = startups.slice(0, 8).map((s) => [
     <span key="name" className="font-medium text-[#0A0B0E]">{s.name}</span>,

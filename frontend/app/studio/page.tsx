@@ -1,15 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import PageWrapper from '@/components/layout/PageWrapper'
 import Card from '@/components/ui/Card'
 import KPICard from '@/components/ui/KPICard'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Table from '@/components/ui/Table'
 import DonutChart from '@/components/charts/DonutChart'
-import { getStudioSummary } from '@/lib/api'
 import * as mockStudio from '@/lib/mock/studio'
-import type { StudioSummary } from '@/lib/types'
 
 const fmtUSD = (v: number) =>
   v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(2)}M` : `$${(v / 1_000).toFixed(0)}K`
@@ -22,19 +19,12 @@ const phaseColors: Record<string, string> = {
 }
 
 export default function StudioPage() {
-  const [summary, setSummary] = useState<StudioSummary | null>(null)
+  const { summary, companies, alphaMetrics } = mockStudio
 
-  useEffect(() => {
-    getStudioSummary().then(setSummary)
-  }, [])
-
-  const donutData = summary
-    ? Object.entries(summary.companies_by_phase).map(([name, value]) => ({ name, value }))
-    : []
-
+  const donutData = Object.entries(summary.companies_by_phase).map(([name, value]) => ({ name, value }))
   const donutColors = donutData.map((d) => phaseColors[d.name] ?? '#9CA3AF')
 
-  const companyRows = mockStudio.companies.map((c) => [
+  const companyRows = companies.map((c) => [
     <span key="name" className="font-medium">{c.startup_name}</span>,
     <span
       key="phase"
@@ -52,7 +42,7 @@ export default function StudioPage() {
       : '—',
   ])
 
-  const alphaRows = mockStudio.alphaMetrics.map((a) => [
+  const alphaRows = alphaMetrics.map((a) => [
     a.startup_name,
     a.metric,
     String(a.studio_value),
@@ -67,28 +57,19 @@ export default function StudioPage() {
 
   return (
     <PageWrapper>
-      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Empresas totales" value={String(summary?.total_companies ?? 5)} />
-        <KPICard
-          label="Graduation rate"
-          value={`${summary?.graduation_rate_pct ?? 40}%`}
-          trend="up"
-        />
-        <KPICard
-          label="Build cost total"
-          value={fmtUSD(summary?.total_build_cost_usd ?? 850000)}
-        />
+        <KPICard label="Empresas totales" value={String(summary.total_companies)} />
+        <KPICard label="Graduation rate" value={`${summary.graduation_rate_pct}%`} trend="up" />
+        <KPICard label="Build cost total" value={fmtUSD(summary.total_build_cost_usd)} />
         <KPICard
           label="Build cost prom."
-          value={fmtUSD(summary?.avg_build_cost_usd ?? 170000)}
+          value={fmtUSD(summary.avg_build_cost_usd)}
           delta={-32}
           trend="up"
           deltaLabel="vs benchmark LATAM"
         />
       </div>
 
-      {/* Phase chart + companies */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
           <SectionTitle title="Empresas por fase" className="mb-2" />
@@ -104,7 +85,6 @@ export default function StudioPage() {
         </Card>
       </div>
 
-      {/* Alpha metrics */}
       <Card padding="sm">
         <SectionTitle
           title="Alpha metrics"

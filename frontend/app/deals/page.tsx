@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import PageWrapper from '@/components/layout/PageWrapper'
 import Card from '@/components/ui/Card'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Table from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import BarChart from '@/components/charts/BarChart'
-import { getDeals, getSourcingChannels } from '@/lib/api'
 import * as mockDeals from '@/lib/mock/deals'
 import type { DealOpportunity, SourcingChannel } from '@/lib/types'
 
@@ -18,25 +17,19 @@ const dealBarData = Object.entries(mockDeals.dealsByStatus).map(([name, value]) 
   value,
 }))
 
+const scoreColor = (score: number) =>
+  score >= 75 ? 'text-[#22C55E]' : score >= 55 ? 'text-[#F5A623]' : 'text-[#EF4444]'
+
 export default function DealsPage() {
-  const [deals, setDeals]     = useState<DealOpportunity[]>([])
-  const [channels, setChannels] = useState<SourcingChannel[]>([])
-  const [status, setStatus]   = useState('')
-  const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState('')
 
-  const load = useCallback(() => {
-    setLoading(true)
-    Promise.all([getDeals(status || undefined), getSourcingChannels()])
-      .then(([d, ch]) => { setDeals(d); setChannels(ch) })
-      .finally(() => setLoading(false))
-  }, [status])
+  const filteredDeals: DealOpportunity[] = status
+    ? mockDeals.deals.filter((d) => d.status === (status as DealOpportunity['status']))
+    : mockDeals.deals
 
-  useEffect(() => { load() }, [load])
+  const channels: SourcingChannel[] = mockDeals.channels
 
-  const scoreColor = (score: number) =>
-    score >= 75 ? 'text-[#22C55E]' : score >= 55 ? 'text-[#F5A623]' : 'text-[#EF4444]'
-
-  const dealRows = deals.map((d) => [
+  const dealRows = filteredDeals.map((d) => [
     <span key="name" className="font-medium">{d.startup_name}</span>,
     <Badge key="status" value={d.status} />,
     d.sourcing_channel_name,
@@ -87,14 +80,10 @@ export default function DealsPage() {
               ))}
             </select>
           </div>
-          {loading ? (
-            <div className="py-8 text-center text-sm text-[#9CA3AF]">Cargando...</div>
-          ) : (
-            <Table
-              headers={['Startup', 'Estado', 'Canal', 'Identificado', 'En pipeline', 'Thesis score']}
-              rows={dealRows}
-            />
-          )}
+          <Table
+            headers={['Startup', 'Estado', 'Canal', 'Identificado', 'En pipeline', 'Thesis score']}
+            rows={dealRows}
+          />
         </Card>
 
         <Card>
@@ -103,7 +92,6 @@ export default function DealsPage() {
         </Card>
       </div>
 
-      {/* Sourcing channels */}
       <Card padding="sm">
         <SectionTitle
           title="Canales de sourcing"

@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageWrapper from '@/components/layout/PageWrapper'
 import Card from '@/components/ui/Card'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Table from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
-import { getStartups } from '@/lib/api'
-import type { Startup } from '@/lib/types'
+import { startups as allStartups } from '@/lib/mock/portfolio'
 
 const SECTORS = ['Fintech', 'LogTech', 'HealthTech', 'AgriTech', 'EdTech', 'LegalTech', 'InsurTech']
 const STAGES  = ['Pre-Seed', 'Seed', 'Series A', 'Series B']
@@ -16,23 +15,18 @@ const COUNTRIES = ['CO', 'MX', 'BR', 'AR']
 
 export default function PortfolioPage() {
   const router = useRouter()
-  const [startups, setStartups] = useState<Startup[]>([])
   const [sector, setSector]   = useState('')
   const [stage, setStage]     = useState('')
   const [country, setCountry] = useState('')
   const [search, setSearch]   = useState('')
-  const [loading, setLoading] = useState(true)
 
-  const load = useCallback(() => {
-    setLoading(true)
-    getStartups({ sector, stage, country, name: search })
-      .then(setStartups)
-      .finally(() => setLoading(false))
-  }, [sector, stage, country, search])
-
-  useEffect(() => {
-    load()
-  }, [load])
+  const startups = allStartups.filter((s) => {
+    if (sector  && s.sector  !== sector)  return false
+    if (stage   && s.stage   !== stage)   return false
+    if (country && s.country !== country) return false
+    if (search  && !s.name.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   const rows = startups.map((s) => [
     <span key="name" className="font-medium text-[#0A0B0E]">{s.name}</span>,
@@ -55,7 +49,6 @@ export default function PortfolioPage() {
         subtitle={`${startups.length} startups — filtros aplicados`}
       />
 
-      {/* Filters */}
       <Card padding="sm">
         <div className="flex flex-wrap gap-3 px-2 py-1">
           <input
@@ -100,17 +93,12 @@ export default function PortfolioPage() {
         </div>
       </Card>
 
-      {/* Table */}
       <Card padding="sm">
-        {loading ? (
-          <div className="py-12 text-center text-sm text-[#9CA3AF]">Cargando...</div>
-        ) : (
-          <Table
-            headers={['Nombre', 'Sector', 'Subsector', 'Etapa', 'País', 'Estado', 'Datos']}
-            rows={rows}
-            onRowClick={(i) => router.push(`/portfolio/${encodeURIComponent(startups[i]?.name ?? '')}`)}
-          />
-        )}
+        <Table
+          headers={['Nombre', 'Sector', 'Subsector', 'Etapa', 'País', 'Estado', 'Datos']}
+          rows={rows}
+          onRowClick={(i) => router.push(`/portfolio/${encodeURIComponent(startups[i]?.name ?? '')}`)}
+        />
       </Card>
     </PageWrapper>
   )
