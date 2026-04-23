@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "deploy": "next build && node -e \"require('fs').writeFileSync('out/.nojekyll', '')\"",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "14",

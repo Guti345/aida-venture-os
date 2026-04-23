@@ -134,6 +134,11 @@ instance/
 .webassets-cache
 local_settings.py
 
+# ═══ Next.js ═══
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+
 # ═══════════════════════════════════════════
 # NOTA IMPORTANTE PARA AIDA VENTURE OS
 # ═══════════════════════════════════════════
